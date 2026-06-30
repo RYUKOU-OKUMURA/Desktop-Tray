@@ -64,10 +64,6 @@ private struct TabRailTabView: View {
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 4) {
-                Circle()
-                    .fill(tab.color.swiftUIColor)
-                    .frame(width: 8, height: 8)
-
                 Text(tab.shortLabel)
                     .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
@@ -84,13 +80,18 @@ private struct TabRailTabView: View {
                 }
             }
             .frame(width: TrayTheme.collapsedTabWidth, height: TrayTheme.collapsedTabHeight)
-            .background(
-                ZStack {
-                    tab.color.swiftUIColor.opacity(0.12)
-                    Color.primary.opacity(0.04)
-                }
+            .background(Color.primary.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(tab.color.swiftUIColor.opacity(0.7))
+                    .frame(width: 3)
+                    .padding(.vertical, 8)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
             )
-            .glassBackground(cornerRadius: 10, lineWidth: 0.5)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("\(tab.name) \(NSLocalizedString("tray.collapse", comment: ""))"))

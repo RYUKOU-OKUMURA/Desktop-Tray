@@ -46,7 +46,8 @@ final class TrayListViewModel {
     /// 新規トレイ作成（要件定義 §7.1）。
     @discardableResult
     func createTray(name: String, color: TrayColor? = nil) -> Tray {
-        let chosen = color ?? TrayTheme.palette[trays.filter(\.isSmart.negated).count % TrayTheme.palette.count]
+        let manualCount = trays.filter { !$0.isSmart }.count
+        let chosen = color ?? TrayTheme.palette[manualCount % TrayTheme.palette.count]
         let visible = LayoutEngine.combinedVisibleFrame()
         let frame = TrayFrame(
             x: visible.minX + 80,
@@ -116,8 +117,4 @@ final class TrayListViewModel {
         case .smart:  return smartResults[tray.id] ?? []
         }
     }
-}
-
-private extension Bool {
-    var negated: Bool { !self }
 }

@@ -10,13 +10,12 @@
 		0672372F02F1F8A918CF460E /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E65F2374D8BF47BD2A888720 /* MenuBarController.swift */; };
 		2140E7EE97BD58468FA9FE14 /* DesktopDisplayMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8866EC2113AED5477E3D8DF /* DesktopDisplayMode.swift */; };
 		2B8BF004362AB78333F9DE24 /* TrayPanelViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422F21B75CAA6D53405157C7 /* TrayPanelViewModel.swift */; };
-		2D67976B42361700D839426D /* SideRailController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AA4B5EA05AB5CA4A926EBEF /* SideRailController.swift */; };
 		34C5710A0F45C7778F720EA3 /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A838532F72ED004233396C0E /* IntegrationTests.swift */; };
 		374E1EDA07F0EAD7E4D94153 /* OverlayWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21AB9421027FD918BDF2C040 /* OverlayWindowManager.swift */; };
 		441994096E2E7EE1C8DC80FF /* TrayTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62BD81ECC0C9690E6DC66210 /* TrayTheme.swift */; };
 		4538AA89920F96474A9E16D2 /* TrayEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C8AA0CA5275896A7443F4 /* TrayEngineTests.swift */; };
 		4A6FED0DC93C8FFAB33CEA03 /* Animations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78C51A9FA65A8C25E16167EC /* Animations.swift */; };
-		4DF5833101390059E42827C6 /* TrayListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFA80CD6E39287BB4481DA44 /* TrayListViewModel.swift */; };
+		583741030CC4EC9430797570 /* TrayItemTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B3B809FD2BEDFEEA8ED177 /* TrayItemTransfer.swift */; };
 		5FDB1381DB79398756465589 /* LayoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B916A43571E70DCC409C49 /* LayoutEngine.swift */; };
 		63546BC1FAC45BA62896EA74 /* TrayPanelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D535EE0FE522CA523D233C7 /* TrayPanelContainer.swift */; };
 		637796122FA338B48D7039EF /* PersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FC1B8066189569069DE6A5 /* PersistenceStore.swift */; };
@@ -24,7 +23,6 @@
 		646968DD718860AF641A2E72 /* FileActionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25CD6A4824FB64C84BA77B6D /* FileActionsService.swift */; };
 		6507ECDF4866340A5891C75F /* DragSessionBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A23FA34ACAC42C514D6D520 /* DragSessionBridge.swift */; };
 		654485FB67D2C7D074A8B577 /* MockTrayData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FF11CDC1D3A222DBF38A08D /* MockTrayData.swift */; };
-		79D9F190764E53D49CCF1115 /* SideRailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 549D15460D332C3C88D99F23 /* SideRailView.swift */; };
 		85E9752D8F59237973EBDF39 /* PersistenceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C33F884BEFC5668632101D2C /* PersistenceStoreTests.swift */; };
 		86653D5ACA4BE23405EB5B9F /* TrayEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F036A1DD48E763B8C7249435 /* TrayEngine.swift */; };
 		8894AA1877ED0BA65B0C152B /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70F5B94832C69959C3EFD065 /* ToastView.swift */; };
@@ -33,8 +31,8 @@
 		A4589A8C72CDA208228A64FC /* TrayPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445B84F96AA654BF59AE92BC /* TrayPanelView.swift */; };
 		AA9642E77A1101FAA474BA4A /* FileSystemWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A621BC885EAD618E0D5B8ED9 /* FileSystemWatcher.swift */; };
 		ACEEE6117B2F23D0A8613FD1 /* SmartTrayPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA524CA37531CE3E4F067DC /* SmartTrayPresets.swift */; };
-		B285CF0896B85AD2B2AFDE0B /* PrototypeCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2F3251447E7191C699C3F24 /* PrototypeCoordinator.swift */; };
 		C46484DF8FC9A3B84E3FDE0F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24BE37FD44C23C08ECF93BC /* AppDelegate.swift */; };
+		C59AEBABB9D78F9D10654D53 /* TrayListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9895CAD8F2421407FE565FF /* TrayListViewModel.swift */; };
 		C5BA51946D62F4AD0FA6C680 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = AAB3B42B4CF4FE58C5D36361 /* Localizable.strings */; };
 		C61DF690A518C407F31FA6D0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D288023113ED43CA89839FC6 /* Assets.xcassets */; };
 		D0581E3ADBAB5432A8E8C5B4 /* PanelSubclasses.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5308DDBDB7AFA4724E61EAB /* PanelSubclasses.swift */; };
@@ -47,9 +45,7 @@
 		EC498059F1B6CB9936ACBBD7 /* TrayItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F8E924BF2491AB068FD9B3 /* TrayItem.swift */; };
 		ED73AB1043E02AAFC6C79F09 /* SmartTrayEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC959520A5F987F923D3E7E1 /* SmartTrayEvaluator.swift */; };
 		F01C289B6ECD2E694B6FF526 /* Tray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118F9213E9AF43DDF39B594E /* Tray.swift */; };
-		F1951E78EDBC945C1BF6A880 /* TrayTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90799967B6B92631831F67C /* TrayTabView.swift */; };
 		F7FDFF5A8FBF6753F7AB0FB6 /* DesktopScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D77CD8A1AE1763A3D82A8D4 /* DesktopScanner.swift */; };
-		FCCC69B738EF8F0ECC3890B9 /* SnapGuideOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5028A201E9BF8CFB96DC5E5F /* SnapGuideOverlay.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,12 +67,9 @@
 		2FF11CDC1D3A222DBF38A08D /* MockTrayData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTrayData.swift; sourceTree = "<group>"; };
 		331C8AA0CA5275896A7443F4 /* TrayEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrayEngineTests.swift; sourceTree = "<group>"; };
 		33CB82D2F463C8AF12266FCD /* DesktopTrayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopTrayApp.swift; sourceTree = "<group>"; };
-		3AA4B5EA05AB5CA4A926EBEF /* SideRailController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideRailController.swift; sourceTree = "<group>"; };
 		3D77CD8A1AE1763A3D82A8D4 /* DesktopScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopScanner.swift; sourceTree = "<group>"; };
 		422F21B75CAA6D53405157C7 /* TrayPanelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrayPanelViewModel.swift; sourceTree = "<group>"; };
 		445B84F96AA654BF59AE92BC /* TrayPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrayPanelView.swift; sourceTree = "<group>"; };
-		5028A201E9BF8CFB96DC5E5F /* SnapGuideOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapGuideOverlay.swift; sourceTree = "<group>"; };
-		549D15460D332C3C88D99F23 /* SideRailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideRailView.swift; sourceTree = "<group>"; };
 		62BD81ECC0C9690E6DC66210 /* TrayTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrayTheme.swift; sourceTree = "<group>"; };
 		6A23FA34ACAC42C514D6D520 /* DragSessionBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragSessionBridge.swift; sourceTree = "<group>"; };
 		70F5B94832C69959C3EFD065 /* ToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
@@ -86,16 +79,15 @@
 		85BE4E14FEB17B3AB157CE80 /* SmartTrayEvaluatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTrayEvaluatorTests.swift; sourceTree = "<group>"; };
 		89193444BC9B363D7A2EDE9F /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
 		988286176687732A1E7CFCEA /* DesktopTray.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DesktopTray.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A0B3B809FD2BEDFEEA8ED177 /* TrayItemTransfer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrayItemTransfer.swift; sourceTree = "<group>"; };
 		A24BE37FD44C23C08ECF93BC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A6159376725B53850440CB6B /* DesktopTrayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DesktopTrayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A621BC885EAD618E0D5B8ED9 /* FileSystemWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemWatcher.swift; sourceTree = "<group>"; };
 		A838532F72ED004233396C0E /* IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
 		AAB3B42B4CF4FE58C5D36361 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = Localizable.strings; sourceTree = "<group>"; };
-		B90799967B6B92631831F67C /* TrayTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrayTabView.swift; sourceTree = "<group>"; };
 		C33F884BEFC5668632101D2C /* PersistenceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceStoreTests.swift; sourceTree = "<group>"; };
-		CFA80CD6E39287BB4481DA44 /* TrayListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrayListViewModel.swift; sourceTree = "<group>"; };
+		C9895CAD8F2421407FE565FF /* TrayListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrayListViewModel.swift; sourceTree = "<group>"; };
 		D288023113ED43CA89839FC6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		D2F3251447E7191C699C3F24 /* PrototypeCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrototypeCoordinator.swift; sourceTree = "<group>"; };
 		DC537C70D3FF1371F7A62B9A /* LayoutEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutEngineTests.swift; sourceTree = "<group>"; };
 		E3B916A43571E70DCC409C49 /* LayoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutEngine.swift; sourceTree = "<group>"; };
 		E4F8E924BF2491AB068FD9B3 /* TrayItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrayItem.swift; sourceTree = "<group>"; };
@@ -115,7 +107,6 @@
 			isa = PBXGroup;
 			children = (
 				A792C59E0A910C2C1586B9CD /* Settings */,
-				C7628CD476D7B6931BF6BCD8 /* SideRail */,
 				9BB60EFFD73AFA181866265C /* TrayPanel */,
 			);
 			path = Features;
@@ -159,7 +150,6 @@
 				A24BE37FD44C23C08ECF93BC /* AppDelegate.swift */,
 				33CB82D2F463C8AF12266FCD /* DesktopTrayApp.swift */,
 				2FF11CDC1D3A222DBF38A08D /* MockTrayData.swift */,
-				D2F3251447E7191C699C3F24 /* PrototypeCoordinator.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -171,6 +161,7 @@
 				F0B18D5ACA79E818F778293C /* SmartTrayRule.swift */,
 				118F9213E9AF43DDF39B594E /* Tray.swift */,
 				E4F8E924BF2491AB068FD9B3 /* TrayItem.swift */,
+				A0B3B809FD2BEDFEEA8ED177 /* TrayItemTransfer.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -201,7 +192,6 @@
 				6A23FA34ACAC42C514D6D520 /* DragSessionBridge.swift */,
 				21AB9421027FD918BDF2C040 /* OverlayWindowManager.swift */,
 				E5308DDBDB7AFA4724E61EAB /* PanelSubclasses.swift */,
-				3AA4B5EA05AB5CA4A926EBEF /* SideRailController.swift */,
 				FFAA1522894904B582DCBBBE /* TrayWindowController.swift */,
 			);
 			path = Windows;
@@ -221,10 +211,10 @@
 			children = (
 				70F5B94832C69959C3EFD065 /* ToastView.swift */,
 				714E2A80D0752CF00FAA7A70 /* TrayItemView.swift */,
+				C9895CAD8F2421407FE565FF /* TrayListViewModel.swift */,
 				1D535EE0FE522CA523D233C7 /* TrayPanelContainer.swift */,
 				445B84F96AA654BF59AE92BC /* TrayPanelView.swift */,
 				422F21B75CAA6D53405157C7 /* TrayPanelViewModel.swift */,
-				B90799967B6B92631831F67C /* TrayTabView.swift */,
 			);
 			path = TrayPanel;
 			sourceTree = "<group>";
@@ -249,16 +239,6 @@
 			children = (
 			);
 			path = Settings;
-			sourceTree = "<group>";
-		};
-		C7628CD476D7B6931BF6BCD8 /* SideRail */ = {
-			isa = PBXGroup;
-			children = (
-				549D15460D332C3C88D99F23 /* SideRailView.swift */,
-				5028A201E9BF8CFB96DC5E5F /* SnapGuideOverlay.swift */,
-				CFA80CD6E39287BB4481DA44 /* TrayListViewModel.swift */,
-			);
-			path = SideRail;
 			sourceTree = "<group>";
 		};
 		CF60C81D05E5B1FE333A438F = {
@@ -390,23 +370,19 @@
 				374E1EDA07F0EAD7E4D94153 /* OverlayWindowManager.swift in Sources */,
 				D0581E3ADBAB5432A8E8C5B4 /* PanelSubclasses.swift in Sources */,
 				637796122FA338B48D7039EF /* PersistenceStore.swift in Sources */,
-				B285CF0896B85AD2B2AFDE0B /* PrototypeCoordinator.swift in Sources */,
-				2D67976B42361700D839426D /* SideRailController.swift in Sources */,
-				79D9F190764E53D49CCF1115 /* SideRailView.swift in Sources */,
 				ED73AB1043E02AAFC6C79F09 /* SmartTrayEvaluator.swift in Sources */,
 				ACEEE6117B2F23D0A8613FD1 /* SmartTrayPresets.swift in Sources */,
 				E6183ACBE6E7B927AD16D89F /* SmartTrayRule.swift in Sources */,
-				FCCC69B738EF8F0ECC3890B9 /* SnapGuideOverlay.swift in Sources */,
 				8894AA1877ED0BA65B0C152B /* ToastView.swift in Sources */,
 				F01C289B6ECD2E694B6FF526 /* Tray.swift in Sources */,
 				86653D5ACA4BE23405EB5B9F /* TrayEngine.swift in Sources */,
 				EC498059F1B6CB9936ACBBD7 /* TrayItem.swift in Sources */,
+				583741030CC4EC9430797570 /* TrayItemTransfer.swift in Sources */,
 				E4A342C7EE9B60CD83F6924D /* TrayItemView.swift in Sources */,
-				4DF5833101390059E42827C6 /* TrayListViewModel.swift in Sources */,
+				C59AEBABB9D78F9D10654D53 /* TrayListViewModel.swift in Sources */,
 				63546BC1FAC45BA62896EA74 /* TrayPanelContainer.swift in Sources */,
 				A4589A8C72CDA208228A64FC /* TrayPanelView.swift in Sources */,
 				2B8BF004362AB78333F9DE24 /* TrayPanelViewModel.swift in Sources */,
-				F1951E78EDBC945C1BF6A880 /* TrayTabView.swift in Sources */,
 				441994096E2E7EE1C8DC80FF /* TrayTheme.swift in Sources */,
 				E8713674A42BF65DB63EC9AF /* TrayWindowController.swift in Sources */,
 			);

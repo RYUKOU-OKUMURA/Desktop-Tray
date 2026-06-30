@@ -3,9 +3,11 @@ import SwiftUI
 /// 単一ファイル/フォルダ表示（要件定義 §16）。
 /// ホバーで軽く浮く、ファイル名は2行までで省略、stale は灰色オーバーレイ。
 /// 右クリックメニュー: 開く / Finder で表示 / トレイから外す（要件定義 §7.6）。
+/// ドラッグで他トレイへ移動・同一トレイ内で並び替えができる（Fix F）。
 struct TrayItemView: View {
     let presentation: TrayItemPresentation
     let icon: NSImage?
+    let trayID: UUID
     let onDoubleClick: () -> Void
     let onReveal: () -> Void
     let onUnassign: () -> Void
@@ -45,6 +47,7 @@ struct TrayItemView: View {
         }
         .onHover { isHovered = $0 }
         .onTapGesture(count: 2, perform: onDoubleClick)
+        .draggable(TrayItemTransfer(itemID: presentation.id, sourceTrayID: trayID))
         .contextMenu {
             Button {
                 onDoubleClick()
@@ -65,7 +68,7 @@ struct TrayItemView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text(presentation.displayName))
-        .accessibilityHint(Text("ダブルクリックで開く"))
+        .accessibilityHint(Text("ダブルクリックで開く、ドラッグで移動"))
     }
 
     @ViewBuilder

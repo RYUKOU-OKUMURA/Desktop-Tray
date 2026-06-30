@@ -7,15 +7,19 @@ struct TrayPanelContainer: View {
     let tray: Tray
     @Bindable var viewModel: TrayPanelViewModel
     /// `TrayItem` 群（URL 復元用）。Presentation には URL を持たせないため、
-    /// ダブルクリック / Finder 表示 / トレイから外す のアクションで id 経由で引き当てる。
+    /// ダブルクリック / Finder 表示 / トレイから外す / D&D 移動 のアクションで id 経由で引き当てる。
     let sourceItems: [TrayItem]
     let onCollapse: () -> Void
+    let onExpand: () -> Void
     let onUnassign: (TrayItemPresentation) -> Void
+    let onReorder: (UUID, Int) -> Void
+    let onMoveFromOtherTray: (UUID, UUID) -> Void
     let onFileDrop: ([URL]) -> Void
 
     var body: some View {
         TrayPanelView(
             tray: tray,
+            trayID: tray.id,
             items: viewModel.presentations,
             iconProvider: { presentation in
                 viewModel.icon(for: presentation)
@@ -32,6 +36,9 @@ struct TrayPanelContainer: View {
             },
             onItemUnassign: onUnassign,
             onCollapse: onCollapse,
+            onExpand: onExpand,
+            onReorder: onReorder,
+            onMoveFromOtherTray: onMoveFromOtherTray,
             toastMessage: $viewModel.toastMessage
         )
         .overlay {

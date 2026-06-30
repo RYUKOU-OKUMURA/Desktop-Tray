@@ -23,15 +23,27 @@ final class LayoutEngineTests: XCTestCase {
         XCTAssertFalse(engine.shouldSnap(frame: farFromLeft))
     }
 
-    func test_collapsedTabFrame_isPlacedAtLeftEdge() {
-        let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
-        let tab0 = engine.collapsedTabFrame(index: 0, screen: screen)
-        let tab1 = engine.collapsedTabFrame(index: 1, screen: screen)
+    func test_collapsedEdgeFrame_slidesOffscreen() {
+        let saved = CGRect(x: 200, y: 100, width: 400, height: 300)
+        let collapsed = engine.collapsedEdgeFrame(saved: saved, tabWidth: 40)
 
-        XCTAssertEqual(tab0.minX, 56) // sideRailWidth
-        XCTAssertEqual(tab0.width, 40)
-        XCTAssertEqual(tab1.minX, 56)
-        XCTAssertLessThan(tab1.minY, tab0.minY) // タブは下に並ぶ
+        // 幅・高さ・Y位置は維持
+        XCTAssertEqual(collapsed.width, 400)
+        XCTAssertEqual(collapsed.height, 300)
+        XCTAssertEqual(collapsed.origin.y, 100)
+        // x = -(400 - 40) = -360（左端から40px覗く）
+        XCTAssertEqual(collapsed.minX, -360)
+        // 覗いている部分の右端 = -360 + 400 = 40
+        XCTAssertEqual(collapsed.maxX, 40)
+    }
+
+    func test_collapsedEdgeFrame_preservesHeightAndY() {
+        let saved = CGRect(x: 500, y: 600, width: 420, height: 280)
+        let collapsed = engine.collapsedEdgeFrame(saved: saved, tabWidth: 40)
+
+        XCTAssertEqual(collapsed.origin.y, 600)
+        XCTAssertEqual(collapsed.height, 280)
+        XCTAssertEqual(collapsed.minX, -380) // -(420 - 40)
     }
 
     func test_expandedFrame_clampsToScreenWhenOffscreen() {

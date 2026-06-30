@@ -62,7 +62,13 @@ enum SmartTrayPresets {
 
     /// 全プリセットを配列で返す。生成順は screenshots -> pdf -> images -> recent -> uncategorized。
     /// uncategorized は最後に評価される必要があるため、配列の末尾に置く。
+    /// 補助修正: 起動直後の散らかりを防ぐため、スマート5種は初期収納状態（左端タブ化）で生成する。
     static var all: [Tray] {
-        [screenshots, pdf, images, recent, uncategorized]
+        [screenshots, pdf, images, recent, uncategorized].enumerated().map { idx, tray in
+            var t = tray
+            t.isCollapsed = true
+            t.tabIndex = idx
+            return t
+        }
     }
 }

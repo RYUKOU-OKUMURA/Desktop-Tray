@@ -12,15 +12,3 @@ final class TrayPanel: NSPanel {
         set { /* 固定 */ }
     }
 }
-
-/// 左レール用のカスタム `NSPanel`。画面左端に固定表示する。
-final class SideRailPanel: NSPanel {
-    override var canBecomeKey: Bool { false }
-    override var canBecomeMain: Bool { false }
-}
-
-/// 収納タブ表示用の小型パネル。
-final class TrayTabPanel: NSPanel {
-    override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { false }
-}

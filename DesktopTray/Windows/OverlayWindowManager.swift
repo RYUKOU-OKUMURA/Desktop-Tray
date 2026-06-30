@@ -3,6 +3,8 @@ import SwiftUI
 
 /// 全トレイのライフサイクル、Z-order、画面外補正を管理する（アーキテクチャ v0.1 §3.2 / §10）。
 /// 外部ディスプレイ切断時は `clampToVisibleFrames()` で frame を可視領域内へ戻す。
+///
+/// 収納仕様（Fix D）: `orderOut` せず左端画面外へスライドし、パネル自体をタブ化する。
 @MainActor
 final class OverlayWindowManager {
     private let layoutEngine: LayoutEngine
@@ -11,6 +13,9 @@ final class OverlayWindowManager {
     /// 内容生成を遅延評価するコンテンツプロバイダ。
     /// AppCoordinator / TrayListViewModel が差し替える。
     var contentProvider: ((UUID) -> AnyView)?
+
+    /// 収納タブとして覗かせる幅。
+    var collapsedTabWidth: CGFloat { layoutEngine.collapsedTabWidth }
 
     init(layoutEngine: LayoutEngine = LayoutEngine()) {
         self.layoutEngine = layoutEngine
@@ -29,10 +34,13 @@ final class OverlayWindowManager {
             let content = contentProvider?(tray.id) ?? AnyView(EmptyView())
 
             if tray.isCollapsed {
-                // 収納タブのみ表示（タブ UI は SideRailController 側で扱う）
-                let tabFrame = layoutEngine.collapsedTabFrame(index: tray.tabIndex, screen: visible)
-                controller.show(content: { content }, frame: tabFrame)
-                controller.hide()
+                // 収納状態: 左端画面外へスライドした frame で表示（orderOut しない）
+                let expandedSaved = layoutEngine.expandedFrame(saved: tray.frame.cgRect, screen: visible)
+                let collapsedFrame = layoutEngine.collapsedEdgeFrame(
+                    saved: expandedSaved,
+                    tabWidth: layoutEngine.collapsedTabWidth
+                )
+                controller.show(content: { content }, frame: collapsedFrame)
             } else {
                 let expanded = layoutEngine.expandedFrame(saved: tray.frame.cgRect, screen: visible)
                 controller.show(content: { content }, frame: expanded)
@@ -59,31 +67,24 @@ final class OverlayWindowManager {
     }
 
     /// 指定トレイのコンテンツを差し替える（アイテム更新時など）。
+    /// ガラス背景（NSVisualEffectView）は維持したまま SwiftUI のみ更新。
     func updateContent(for id: UUID) {
         guard let controller = controllers[id], let provider = contentProvider else { return }
-        let content = provider(id)
-        if let hosting = controller.panel?.contentView as? NSHostingView<AnyView> {
-            hosting.rootView = content
-        } else {
-            controller.panel?.contentView = NSHostingView(rootView: content)
-        }
+        controller.updateContentView(provider(id))
     }
 
-    /// 指定トレイを収納する。
-    func collapse(tray: Tray) {
-        guard let controller = controllers[tray.id] else { return }
-        let visible = LayoutEngine.combinedVisibleFrame()
-        let tabFrame = layoutEngine.collapsedTabFrame(index: tray.tabIndex, screen: visible)
-        controller.collapse(to: tabFrame)
+    /// 指定トレイを左端画面外へスライド収納する（Fix D）。
+    func collapseToEdge(trayID: UUID, savedFrame: CGRect) {
+        guard let controller = controllers[trayID] else { return }
+        controller.collapseToEdge(savedFrame: savedFrame, tabWidth: layoutEngine.collapsedTabWidth)
     }
 
-    /// 指定トレイを展開する。
-    func expand(tray: Tray) {
-        guard let controller = controllers[tray.id] else { return }
+    /// 指定トレイを保存 frame へスライド展開する（Fix D）。
+    func expandFromEdge(trayID: UUID, savedFrame: CGRect) {
+        guard let controller = controllers[trayID] else { return }
         let visible = LayoutEngine.combinedVisibleFrame()
-        let expanded = layoutEngine.expandedFrame(saved: tray.frame.cgRect, screen: visible)
-        let tabFrame = layoutEngine.collapsedTabFrame(index: tray.tabIndex, screen: visible)
-        controller.expand(to: expanded, from: tabFrame)
+        let expanded = layoutEngine.expandedFrame(saved: savedFrame, screen: visible)
+        controller.expandFromEdge(savedFrame: expanded)
     }
 
     /// 画面構成変更時に全トレイを可視領域へ clamp する。
@@ -100,15 +101,19 @@ final class OverlayWindowManager {
 
     /// 全トレイを展開状態へ。
     func expandAll(trays: [Tray]) {
+        let visible = LayoutEngine.combinedVisibleFrame()
         for tray in trays where tray.isCollapsed {
-            expand(tray: tray)
+            let expanded = layoutEngine.expandedFrame(saved: tray.frame.cgRect, screen: visible)
+            expandFromEdge(trayID: tray.id, savedFrame: expanded)
         }
     }
 
     /// 全トレイを収納状態へ。
     func collapseAll(trays: [Tray]) {
+        let visible = LayoutEngine.combinedVisibleFrame()
         for tray in trays where !tray.isCollapsed {
-            collapse(tray: tray)
+            let expanded = layoutEngine.expandedFrame(saved: tray.frame.cgRect, screen: visible)
+            collapseToEdge(trayID: tray.id, savedFrame: expanded)
         }
     }
 

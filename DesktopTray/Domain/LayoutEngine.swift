@@ -34,19 +34,30 @@ struct LayoutEngine: Sendable {
         frame.minX <= sideRailWidth + snapThreshold
     }
 
-    /// 収納時の左端タブ frame を計算。
-    /// `index` は収納タブの並び順（0始まり）。タブは左レールの右に縦に並ぶ。
+    /// 収納時の左端タブ frame を計算（旧仕様: サイドレール上のタブ）。
+    /// Fix D 以降は `collapsedEdgeFrame` を使用。本メソッドは互換・テスト用に残す。
     func collapsedTabFrame(index: Int, screen: CGRect) -> CGRect {
         let tabHeight: CGFloat = 96
         let spacing: CGFloat = 8
         let topPadding: CGFloat = 16
-        // NSRect は左下原点。screen の上端から topPadding + index*(tabHeight+spacing) 下がった位置。
         let y = screen.maxY - topPadding - CGFloat(index + 1) * tabHeight - CGFloat(index) * spacing
         return CGRect(
             x: sideRailWidth,
             y: y,
             width: collapsedTabWidth,
             height: tabHeight
+        )
+    }
+
+    /// 収納時の画面外スライド frame（Fix D）。
+    /// 保存 frame の幅のうち `tabWidth` だけ左端に覗かせ、残りを画面外へ出す。
+    /// パネル自体を `orderOut` せずスライドで隠すため、覗いた部分がタブになる。
+    func collapsedEdgeFrame(saved: CGRect, tabWidth: CGFloat) -> CGRect {
+        CGRect(
+            x: -(saved.width - tabWidth),
+            y: saved.origin.y,
+            width: saved.width,
+            height: saved.height
         )
     }
 

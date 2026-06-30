@@ -55,6 +55,8 @@ final class DragSessionBridge: ObservableObject {
 
 /// Finder からのファイルドロップを受け取る NSView サブクラス。
 /// `NSDraggingDestination` を実装し、ドロップされた file URL をコールバックで返す。
+/// `hitTest` で nil を返すことでマウスクリックを透過し、下層の SwiftUI ボタン等を
+/// ブロックしない。ドラッグ操作は hitTest と独立して機能するためファイルドロップは維持される。
 @MainActor
 final class FileDropView: NSView {
     var onDropURLs: (([URL]) -> Void)?
@@ -70,6 +72,11 @@ final class FileDropView: NSView {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         registerForDraggedTypes([.fileURL])
+    }
+
+    /// マウスクリックは透過する。ドラッグ受け取りは registerForDraggedTypes で独立処理される。
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {

@@ -2,7 +2,6 @@ import AppKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var coordinator: AppCoordinator?
-    private var prototypeCoordinator: PrototypeCoordinator?
     private let isRunningTests: Bool = {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }()

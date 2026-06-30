@@ -1,0 +1,46 @@
+/* Desktop Tray - Localizable.strings (ja) */
+
+/* Tray panel */
+"tray.new" = "新規トレイ";
+"tray.collapse" = "収納";
+"tray.expand" = "展開";
+"tray.smart.badge" = "Smart";
+"tray.count.suffix" = "件";
+"tray.stale" = "見つかりません";
+
+/* Side rail */
+"siderail.new" = "新規トレイを追加";
+"siderail.expandAll" = "すべて展開";
+"siderail.collapseAll" = "すべて収納";
+"siderail.quit" = "Desktop Tray を終了";
+"siderail.settings" = "設定";
+
+/* Tray item context menu */
+"item.open" = "開く";
+"item.reveal" = "Finder で表示";
+"item.unassign" = "トレイから外す";
+
+/* Toasts */
+"toast.added" = "%@ に追加しました";
+"toast.removed" = "%@ から外しました";
+
+/* Smart tray presets */
+"smart.screenshots" = "スクリーンショット";
+"smart.pdf" = "PDF";
+"smart.images" = "画像";
+"smart.recent" = "最近追加";
+"smart.uncategorized" = "未分類";
+
+/* Default manual trays */
+"tray.readLater" = "あとで読む";
+"tray.assets" = "素材";
+"tray.inProgress" = "作業中";
+"tray.temp" = "一時保存";
+"tray.other" = "その他";
+
+/* Menu bar */
+"menubar.toggleVisibility" = "表示 / 非表示";
+"menubar.quit" = "終了";
+
+/* Smart tray hint */
+"smart.hint" = "条件に一致するファイルを表示しています";

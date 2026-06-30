@@ -1,0 +1,58 @@
+name: DesktopTray
+options:
+  bundleIdPrefix: com.ryukouokumura
+  deploymentTarget:
+    macOS: "14.0"
+  developmentLanguage: ja
+  groupSortPosition: top
+  generateEmptyDirectories: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    DEVELOPMENT_LANGUAGE: ja
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+targets:
+  DesktopTray:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: DesktopTray
+        excludes:
+          - "Info.plist"
+    resources:
+      - path: DesktopTray/Resources/Assets.xcassets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ryukouokumura.DesktopTray
+        PRODUCT_NAME: DesktopTray
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_APP_SANDBOX: NO
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright (c) 2026 Desktop Tray. All rights reserved."
+        INFOPLIST_KEY_CFBundleDisplayName: "Desktop Tray"
+        COMBINE_HIDPI_IMAGES: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+  DesktopTrayTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: DesktopTrayTests
+    dependencies:
+      - target: DesktopTray
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ryukouokumura.DesktopTrayTests
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/DesktopTray.app/Contents/MacOS/DesktopTray"
+        GENERATE_INFOPLIST_FILE: YES

@@ -2,12 +2,11 @@ import AppKit
 import SwiftUI
 
 /// メニューバー常駐アイコン（要件定義 §15.3 / アーキテクチャ v0.1 §3.2）。
-/// Fix E でサイドレールを廃止したため、新規トレイ / すべて展開 / すべて収納 /
-/// 表示切替 / 終了 の5導線をここに集約する。詳細メニューは Phase 4 以降。
 @MainActor
 final class MenuBarController {
     private var statusItem: NSStatusItem?
     private let onNewTray: () -> Void
+    private let onOpenTrayManagement: () -> Void
     private let onExpandAll: () -> Void
     private let onCollapseAll: () -> Void
     private let onToggleVisibility: () -> Void
@@ -15,12 +14,14 @@ final class MenuBarController {
 
     init(
         onNewTray: @escaping () -> Void,
+        onOpenTrayManagement: @escaping () -> Void,
         onExpandAll: @escaping () -> Void,
         onCollapseAll: @escaping () -> Void,
         onToggleVisibility: @escaping () -> Void,
         onQuit: @escaping () -> Void
     ) {
         self.onNewTray = onNewTray
+        self.onOpenTrayManagement = onOpenTrayManagement
         self.onExpandAll = onExpandAll
         self.onCollapseAll = onCollapseAll
         self.onToggleVisibility = onToggleVisibility
@@ -38,6 +39,7 @@ final class MenuBarController {
 
         let menu = NSMenu()
         menu.addItem(makeItem(title: NSLocalizedString("tray.new", comment: ""), action: #selector(handleNewTray)))
+        menu.addItem(makeItem(title: NSLocalizedString("menubar.trayManagement", comment: ""), action: #selector(handleTrayManagement)))
         menu.addItem(.separator())
         menu.addItem(makeItem(title: NSLocalizedString("siderail.expandAll", comment: ""), action: #selector(handleExpandAll)))
         menu.addItem(makeItem(title: NSLocalizedString("siderail.collapseAll", comment: ""), action: #selector(handleCollapseAll)))
@@ -69,6 +71,7 @@ final class MenuBarController {
     }
 
     @objc private func handleNewTray() { onNewTray() }
+    @objc private func handleTrayManagement() { onOpenTrayManagement() }
     @objc private func handleExpandAll() { onExpandAll() }
     @objc private func handleCollapseAll() { onCollapseAll() }
     @objc private func handleToggle() { onToggleVisibility() }

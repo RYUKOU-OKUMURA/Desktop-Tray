@@ -11,7 +11,11 @@ enum TrayTheme {
     static let itemIconSize: CGFloat = 64
     static let itemSpacing: CGFloat = 12
     static let sideRailWidth: CGFloat = 56
-    static let collapsedTabWidth: CGFloat = 40
+    static let collapsedTabWidth: CGFloat = 32
+    static let collapsedTabHeight: CGFloat = 56
+    static let tabSpacing: CGFloat = 6
+    static let tabRailTopPadding: CGFloat = 16
+    static let tabRailFooterHeight: CGFloat = 72
     static let snapThreshold: CGFloat = 20
 
     // MARK: - Colors

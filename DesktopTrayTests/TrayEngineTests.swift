@@ -172,4 +172,26 @@ final class TrayEngineTests: XCTestCase {
         XCTAssertEqual(trays.count, 1)
         XCTAssertEqual(trays[0].id, t2.id)
     }
+
+    func test_renameTray_updatesName() {
+        let tray = makeManualTray()
+        var trays = [tray]
+        let engine = TrayEngine()
+
+        let renamed = engine.renameTray(id: tray.id, name: "  素材  ", in: &trays)
+
+        XCTAssertTrue(renamed)
+        XCTAssertEqual(trays[0].name, "素材")
+    }
+
+    func test_renameTray_rejectsEmptyName() {
+        let tray = makeManualTray()
+        var trays = [tray]
+        let engine = TrayEngine()
+
+        let renamed = engine.renameTray(id: tray.id, name: "   ", in: &trays)
+
+        XCTAssertFalse(renamed)
+        XCTAssertEqual(trays[0].name, "Test")
+    }
 }

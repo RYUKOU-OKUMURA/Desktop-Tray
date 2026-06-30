@@ -1,14 +1,8 @@
 import SwiftUI
 
 /// トレイ本体のビュー（要件定義 §5.4 / §6.2 / §16）。
-/// ガラス背景は `TrayWindowController` 側の `NSVisualEffectView` (contentView) が提供するため、
-/// SwiftUI 側は背景透明のコンテンツのみ描画する（Fix A）。
-///
-/// 収納状態（Fix D）: パネルは左端画面外へスライドし、左端 40px だけ覗く。
-/// SwiftUI は収納中 `collapsedTab` を描画し、全面タップで `onExpand` を発火する。
-///
-/// アイテム D&D（Fix F）: 展開中のグリッドが `dropDestination` となり、
-/// 同一トレイ内なら並び替え、別トレイからなら移動を受ける。
+/// ガラス背景は `TrayWindowController` 側の `NSVisualEffectView` (contentView) が提供する。
+/// 収納 UI は TabRail が担うため、本 View は展開パネルのみ描画する（Fix G）。
 struct TrayPanelView: View {
     let tray: Tray
     let trayID: UUID
@@ -18,64 +12,11 @@ struct TrayPanelView: View {
     let onItemReveal: (TrayItemPresentation) -> Void
     let onItemUnassign: (TrayItemPresentation) -> Void
     let onCollapse: () -> Void
-    let onExpand: () -> Void
     let onReorder: (UUID, Int) -> Void
     let onMoveFromOtherTray: (UUID, UUID) -> Void
     @Binding var toastMessage: String?
 
     var body: some View {
-        if tray.isCollapsed {
-            collapsedTab
-        } else {
-            expandedPanel
-        }
-    }
-
-    // MARK: - Collapsed (左端タブ)
-
-    private var collapsedTab: some View {
-        HStack(spacing: 0) {
-            VStack(spacing: 6) {
-                Circle()
-                    .fill(tray.color.swiftUIColor)
-                    .frame(width: 10, height: 10)
-                Text(shortLabel)
-                    .font(.headline)
-                    .frame(width: 28)
-                    .lineLimit(1)
-                Text("\(items.count)")
-                    .font(.caption2)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                if tray.isSmart {
-                    Image(systemName: "sparkles")
-                        .font(.caption2)
-                        .foregroundStyle(.purple)
-                }
-            }
-            .frame(width: TrayTheme.collapsedTabWidth, height: 92)
-            .padding(.vertical, 10)
-            .background(Color.primary.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .contentShape(Rectangle())
-        .onTapGesture { onExpand() }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text("\(tray.name) 収納タブ"))
-        .accessibilityHint(Text("クリックで展開"))
-    }
-
-    private var shortLabel: String {
-        let trimmed = tray.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.first.map(String.init) ?? "?"
-    }
-
-    // MARK: - Expanded
-
-    private var expandedPanel: some View {
         VStack(spacing: 0) {
             header
                 .padding(.horizontal, 14)
@@ -119,18 +60,14 @@ struct TrayPanelView: View {
     private func handleDrop(transfers: [TrayItemTransfer], location: CGPoint) -> Bool {
         guard let transfer = transfers.first else { return false }
         if transfer.sourceTrayID == trayID {
-            // 同一トレイ内 → 並び替え
             let index = nearestIndex(for: location, itemCount: items.count)
             onReorder(transfer.itemID, index)
         } else {
-            // 別トレイ → 移動
             onMoveFromOtherTray(transfer.itemID, transfer.sourceTrayID)
         }
         return true
     }
 
-    /// ドロップ位置から最寄りのグリッドインデックスを概算する。
-    /// 4列グリッドを前提とし、セル高さは経験値で約100px。
     private func nearestIndex(for location: CGPoint, itemCount: Int) -> Int {
         guard itemCount > 0 else { return 0 }
         let columns = gridColumns.count
@@ -170,8 +107,8 @@ struct TrayPanelView: View {
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
-            .help("収納")
-            .accessibilityLabel(Text("収納"))
+            .help(NSLocalizedString("tray.collapse", comment: ""))
+            .accessibilityLabel(Text(NSLocalizedString("tray.collapse", comment: "")))
         }
     }
 

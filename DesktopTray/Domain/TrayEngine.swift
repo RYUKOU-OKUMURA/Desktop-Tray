@@ -122,6 +122,17 @@ struct TrayEngine: Sendable {
         return trays.count != before
     }
 
+    /// トレイ名を変更する。
+    @discardableResult
+    func renameTray(id: UUID, name: String, in trays: inout [Tray]) -> Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        guard let idx = trays.firstIndex(where: { $0.id == id }) else { return false }
+        guard trays[idx].name != trimmed else { return false }
+        trays[idx].name = trimmed
+        return true
+    }
+
     /// 全トレイを展開状態へ。
     func expandAll(in trays: inout [Tray]) {
         for idx in trays.indices {

@@ -2,12 +2,8 @@ import AppKit
 import SwiftUI
 
 /// 起動 orchestration を担うアプリコーディネータ（アーキテクチャ v0.1 §3.3 / §4.1）。
-/// `PersistenceStore.load → DesktopScanner.scanDesktop → SmartTrayEvaluator.evaluate →
-///  OverlayWindowManager.restoreWindows → FileSystemWatcher.start` を実行し、
-/// 起動 1 秒以内に UI 表示を目指す（要件定義 §13.1）。
-///
-/// Fix D/E: サイドレールを廃止し、収納は左端画面外スライド（パネル自体がタブ）、
-/// 新規トレイ/全展開/全収納/表示切替/終了 はメニューバーへ集約。
+/// Fix G: 収納時は TrayPanel を非表示にし TabRail でタブ管理。
+/// Fix H: トレイ管理画面で名前変更・削除・新規作成を提供。
 @MainActor
 final class AppCoordinator {
     private let persistence: PersistenceStore
@@ -17,6 +13,8 @@ final class AppCoordinator {
     private let engine: TrayEngine
     private let listViewModel: TrayListViewModel
     private let overlayManager: OverlayWindowManager
+    private let tabRailController: TabRailController
+    private let trayManagementController: TrayManagementWindowController
     private var menuBarController: MenuBarController?
     private let layoutEngine: LayoutEngine
 
@@ -34,6 +32,8 @@ final class AppCoordinator {
         self.engine = TrayEngine()
         self.listViewModel = TrayListViewModel(engine: engine, evaluator: evaluator)
         self.overlayManager = OverlayWindowManager(layoutEngine: layout)
+        self.tabRailController = TabRailController(layoutEngine: layout)
+        self.trayManagementController = TrayManagementWindowController()
         self.snapshot = PersistenceStore.Snapshot(
             schemaVersion: PersistenceStore.currentSchemaVersion,
             trays: [],
@@ -45,15 +45,12 @@ final class AppCoordinator {
         guard !isStarted else { return }
         isStarted = true
 
-        // 1. 永続化ロード
         snapshot = persistence.loadSync()
 
-        // 2. デスクトップスキャン
         let items = scanner.scanDesktop()
         listViewModel.setTrays(snapshot.trays)
         listViewModel.updateDesktopItems(items)
 
-        // 3. stale マーク
         let snapshotWithStale = persistence.markStaleItems(
             in: snapshot,
             existingURLs: listViewModel.existingURLs
@@ -61,15 +58,13 @@ final class AppCoordinator {
         snapshot = snapshotWithStale
         listViewModel.setTrays(snapshot.trays)
 
-        // 4. コンテンツプロバイダ設定
         overlayManager.contentProvider = { [weak self] trayID in
             self?.makeTrayContent(for: trayID) ?? AnyView(EmptyView())
         }
 
-        // 5. ウィンドウ復元（収納状態のトレイは左端タブ化）
         overlayManager.restoreWindows(from: listViewModel.trays)
+        refreshTabRail()
 
-        // 6. FSEvents 開始
         watcher.onChange = { [weak self] in
             Task { @MainActor in
                 self?.handleDesktopChanged()
@@ -77,9 +72,9 @@ final class AppCoordinator {
         }
         watcher.start()
 
-        // 7. メニューバー（主操作導線）
         menuBarController = MenuBarController(
             onNewTray: { [weak self] in self?.createNewTray() },
+            onOpenTrayManagement: { [weak self] in self?.openTrayManagement() },
             onExpandAll: { [weak self] in self?.expandAll() },
             onCollapseAll: { [weak self] in self?.collapseAll() },
             onToggleVisibility: { [weak self] in self?.toggleVisibility() },
@@ -87,7 +82,6 @@ final class AppCoordinator {
         )
         menuBarController?.show()
 
-        // 画面構成変更を監視
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
             selector: #selector(screensChanged),
@@ -99,6 +93,8 @@ final class AppCoordinator {
     func stop() {
         watcher.stop()
         overlayManager.tearDown()
+        tabRailController.close()
+        trayManagementController.close()
         menuBarController?.hide()
         menuBarController = nil
         NSWorkspace.shared.notificationCenter.removeObserver(
@@ -106,7 +102,6 @@ final class AppCoordinator {
             name: NSApplication.didChangeScreenParametersNotification,
             object: nil
         )
-        // 終了時にスナップショット保存
         snapshot.trays = listViewModel.trays
         try? persistence.saveSync(snapshot)
         isStarted = false
@@ -131,9 +126,6 @@ final class AppCoordinator {
                 onCollapse: { [weak self] in
                     self?.collapseTray(id: trayID)
                 },
-                onExpand: { [weak self] in
-                    self?.expandTray(id: trayID)
-                },
                 onUnassign: { [weak self] presentation in
                     self?.unassignItem(presentation: presentation, from: trayID)
                 },
@@ -150,11 +142,52 @@ final class AppCoordinator {
         )
     }
 
+    // MARK: - TabRail
+
+    private func refreshTabRail() {
+        let collapsed = listViewModel.collapsedTrays
+        let counts = Dictionary(uniqueKeysWithValues: listViewModel.trays.map { tray in
+            (tray.id, listViewModel.items(for: tray).count)
+        })
+
+        if collapsed.isEmpty {
+            tabRailController.hide()
+            return
+        }
+
+        tabRailController.refresh(
+            collapsedTrays: collapsed,
+            itemCounts: counts,
+            onExpand: { [weak self] id in
+                self?.expandTray(id: id)
+            },
+            onNewTray: { [weak self] in
+                self?.createNewTray()
+            },
+            onOpenSettings: { [weak self] in
+                self?.openTrayManagement()
+            }
+        )
+    }
+
+    private func managementRows() -> [TrayManagementRow] {
+        listViewModel.trays.map { tray in
+            TrayManagementRow(
+                id: tray.id,
+                name: tray.name,
+                color: tray.color,
+                itemCount: listViewModel.items(for: tray).count,
+                isSmart: tray.isSmart
+            )
+        }
+    }
+
     // MARK: - Actions
 
     private func createNewTray() {
         let tray = listViewModel.createTray(name: "新規トレイ")
         overlayManager.addTray(tray)
+        refreshTabRail()
         saveSnapshot()
     }
 
@@ -162,10 +195,8 @@ final class AppCoordinator {
         guard let idx = listViewModel.trays.firstIndex(where: { $0.id == id }) else { return }
         listViewModel.trays[idx].isCollapsed = true
         engine.reindexCollapsedTabs(in: &listViewModel.trays)
-        let savedFrame = listViewModel.trays[idx].frame.cgRect
-        overlayManager.collapseToEdge(trayID: id, savedFrame: savedFrame)
-        // 収納後のコンテンツ（タブUI）へ差し替え
-        overlayManager.updateContent(for: id)
+        overlayManager.collapse(trayID: id)
+        refreshTabRail()
         saveSnapshot()
     }
 
@@ -174,35 +205,66 @@ final class AppCoordinator {
         listViewModel.trays[idx].isCollapsed = false
         engine.reindexCollapsedTabs(in: &listViewModel.trays)
         let savedFrame = listViewModel.trays[idx].frame.cgRect
-        overlayManager.expandFromEdge(trayID: id, savedFrame: savedFrame)
-        // 展開後のコンテンツ（通常UI）へ差し替え
+        overlayManager.expand(trayID: id, savedFrame: savedFrame)
         overlayManager.updateContent(for: id)
+        refreshTabRail()
         saveSnapshot()
     }
 
     private func expandAll() {
         listViewModel.expandAll()
         overlayManager.expandAll(trays: listViewModel.trays)
-        // 全パネルのコンテンツを展開状態へ差し替え
         refreshAllPanelContents()
+        refreshTabRail()
         saveSnapshot()
     }
 
     private func collapseAll() {
         listViewModel.collapseAll()
         overlayManager.collapseAll(trays: listViewModel.trays)
-        // 全パネルのコンテンツを収納タブUIへ差し替え
-        refreshAllPanelContents()
+        refreshTabRail()
         saveSnapshot()
+    }
+
+    private func openTrayManagement() {
+        trayManagementController.show(
+            trays: managementRows(),
+            onRename: { [weak self] id, name in
+                self?.renameTray(id: id, name: name)
+            },
+            onDelete: { [weak self] id in
+                self?.deleteTray(id: id)
+            },
+            onCreateTray: { [weak self] in
+                self?.createNewTray()
+            }
+        )
+    }
+
+    private func renameTray(id: UUID, name: String) {
+        listViewModel.renameTray(id: id, name: name)
+        refreshAllPanelContents()
+        refreshTabRail()
+        saveSnapshot()
+        openTrayManagement()
+    }
+
+    private func deleteTray(id: UUID) {
+        listViewModel.deleteTray(id: id)
+        overlayManager.removeTray(id: id)
+        panelViewModels.removeValue(forKey: id)
+        refreshTabRail()
+        saveSnapshot()
+        openTrayManagement()
     }
 
     private func handleFileDrop(urls: [URL], into trayID: UUID) {
         for url in urls {
             listViewModel.assign(url: url, to: trayID)
         }
-        // 手動 membership 変更に伴いスマートトレイ（特に未分類）を再評価
         listViewModel.reevaluateSmart()
         refreshAllPanelContents()
+        refreshTabRail()
 
         if let tray = listViewModel.trays.first(where: { $0.id == trayID }) {
             let message = String(
@@ -221,6 +283,7 @@ final class AppCoordinator {
         listViewModel.unassign(url: item.url, from: trayID)
         listViewModel.reevaluateSmart()
         refreshAllPanelContents()
+        refreshTabRail()
 
         let message = String(
             format: NSLocalizedString("toast.removed", comment: ""),
@@ -230,7 +293,6 @@ final class AppCoordinator {
         saveSnapshot()
     }
 
-    /// 同一トレイ内のアイテム並び替え（Fix F）。
     private func reorderItem(itemID: UUID, in trayID: UUID, to index: Int) {
         guard let tray = listViewModel.trays.first(where: { $0.id == trayID }),
               let item = listViewModel.items(for: tray).first(where: { $0.id == itemID })
@@ -241,7 +303,6 @@ final class AppCoordinator {
         saveSnapshot()
     }
 
-    /// 別トレイからアイテムを移動（Fix F）。
     private func moveItem(itemID: UUID, from fromTrayID: UUID, to toTrayID: UUID) {
         guard let fromTray = listViewModel.trays.first(where: { $0.id == fromTrayID }),
               let item = listViewModel.items(for: fromTray).first(where: { $0.id == itemID })
@@ -249,6 +310,7 @@ final class AppCoordinator {
         listViewModel.move(url: item.url, from: fromTrayID, to: toTrayID)
         listViewModel.reevaluateSmart()
         refreshAllPanelContents()
+        refreshTabRail()
         if let toTray = listViewModel.trays.first(where: { $0.id == toTrayID }) {
             let message = String(
                 format: NSLocalizedString("toast.added", comment: ""),
@@ -259,7 +321,6 @@ final class AppCoordinator {
         saveSnapshot()
     }
 
-    /// 全パネルのコンテンツを再描画する（収納/展開切替 + スマート評価結果の伝搬用）。
     private func refreshAllPanelContents() {
         for tray in listViewModel.trays {
             overlayManager.updateContent(for: tray.id)
@@ -269,20 +330,18 @@ final class AppCoordinator {
     private func handleDesktopChanged() {
         let items = scanner.scanDesktop()
         listViewModel.updateDesktopItems(items)
-        // stale 更新
         snapshot.trays = listViewModel.trays
         snapshot = persistence.markStaleItems(
             in: snapshot,
             existingURLs: listViewModel.existingURLs
         )
         listViewModel.setTrays(snapshot.trays)
-        // 全パネル更新
         refreshAllPanelContents()
+        refreshTabRail()
         saveSnapshot()
     }
 
     private func toggleVisibility() {
-        // 全トレイが展開中なら全収納、そうでなければ全展開
         if listViewModel.expandedTrays.isEmpty {
             expandAll()
         } else {
@@ -292,11 +351,11 @@ final class AppCoordinator {
 
     private func saveSnapshot() {
         snapshot.trays = listViewModel.trays
-        // 保存失敗時はメモリ状態を保持し次回再試行（アーキテクチャ v0.1 §5.3）
         try? persistence.saveSync(snapshot)
     }
 
     @objc private func screensChanged() {
         overlayManager.clampAllToVisibleFrames()
+        refreshTabRail()
     }
 }

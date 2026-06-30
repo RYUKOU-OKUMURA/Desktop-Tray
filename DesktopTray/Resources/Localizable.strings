@@ -41,6 +41,20 @@
 /* Menu bar */
 "menubar.toggleVisibility" = "表示 / 非表示";
 "menubar.quit" = "終了";
+"menubar.trayManagement" = "トレイ管理...";
+
+/* Tray management */
+"tray.management.title" = "トレイ管理";
+"tray.management.add" = "新規トレイを追加";
+"tray.management.type.manual" = "手動";
+"tray.management.type.smart" = "Smart";
+"tray.rename" = "名前を変更";
+"tray.rename.placeholder" = "トレイ名";
+"tray.rename.save" = "保存";
+"tray.delete" = "削除";
+"tray.delete.cancel" = "キャンセル";
+"tray.delete.confirm.title" = "トレイを削除しますか？";
+"tray.delete.confirm.message" = "トレイ内の所属情報だけが消えます。デスクトップ上のファイルは削除されません。";
 
 /* Smart tray hint */
 "smart.hint" = "条件に一致するファイルを表示しています";

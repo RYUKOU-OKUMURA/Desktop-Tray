@@ -12,3 +12,13 @@ final class TrayPanel: NSPanel {
         set { /* 固定 */ }
     }
 }
+
+/// 左端 TabRail 用の固定パネル（Fix G）。
+final class TabRailPanel: NSPanel {
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+    override var isMovableByWindowBackground: Bool {
+        get { false }
+        set { /* 固定 */ }
+    }
+}

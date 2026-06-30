@@ -10,7 +10,6 @@ struct TrayPanelContainer: View {
     /// ダブルクリック / Finder 表示 / トレイから外す / D&D 移動 のアクションで id 経由で引き当てる。
     let sourceItems: [TrayItem]
     let onCollapse: () -> Void
-    let onExpand: () -> Void
     let onUnassign: (TrayItemPresentation) -> Void
     let onReorder: (UUID, Int) -> Void
     let onMoveFromOtherTray: (UUID, UUID) -> Void
@@ -36,7 +35,6 @@ struct TrayPanelContainer: View {
             },
             onItemUnassign: onUnassign,
             onCollapse: onCollapse,
-            onExpand: onExpand,
             onReorder: onReorder,
             onMoveFromOtherTray: onMoveFromOtherTray,
             toastMessage: $viewModel.toastMessage

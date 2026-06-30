@@ -62,6 +62,12 @@ final class TrayListViewModel {
     /// トレイ削除。
     func deleteTray(id: UUID) {
         engine.deleteTray(id: id, in: &trays)
+        reevaluateSmart()
+    }
+
+    /// トレイ名変更。
+    func renameTray(id: UUID, name: String) {
+        engine.renameTray(id: id, name: name, in: &trays)
     }
 
     /// ファイルをトレイへ追加（非破壊）。

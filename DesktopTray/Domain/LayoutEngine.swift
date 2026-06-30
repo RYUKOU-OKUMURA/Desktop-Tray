@@ -34,18 +34,39 @@ struct LayoutEngine: Sendable {
         frame.minX <= sideRailWidth + snapThreshold
     }
 
-    /// 収納時の左端タブ frame を計算（旧仕様: サイドレール上のタブ）。
-    /// Fix D 以降は `collapsedEdgeFrame` を使用。本メソッドは互換・テスト用に残す。
+    /// 収納時の左端タブ frame を計算（TabRail 内の各 pill 位置）。
     func collapsedTabFrame(index: Int, screen: CGRect) -> CGRect {
-        let tabHeight: CGFloat = 96
-        let spacing: CGFloat = 8
-        let topPadding: CGFloat = 16
+        let tabHeight = TrayTheme.collapsedTabHeight
+        let spacing = TrayTheme.tabSpacing
+        let topPadding = TrayTheme.tabRailTopPadding
         let y = screen.maxY - topPadding - CGFloat(index + 1) * tabHeight - CGFloat(index) * spacing
         return CGRect(
-            x: sideRailWidth,
+            x: 0,
             y: y,
             width: collapsedTabWidth,
             height: tabHeight
+        )
+    }
+
+    /// TabRail ウィンドウ全体の frame（収納タブ列 + 下部ボタン）。
+    func tabRailWindowFrame(tabCount: Int, screen: CGRect) -> CGRect {
+        let tabHeight = TrayTheme.collapsedTabHeight
+        let spacing = TrayTheme.tabSpacing
+        let topPadding = TrayTheme.tabRailTopPadding
+        let footer = TrayTheme.tabRailFooterHeight
+        let tabsHeight: CGFloat
+        if tabCount > 0 {
+            tabsHeight = CGFloat(tabCount) * tabHeight + CGFloat(tabCount - 1) * spacing
+        } else {
+            tabsHeight = 0
+        }
+        let totalHeight = topPadding + tabsHeight + footer
+        let clampedHeight = min(totalHeight, screen.height - 32)
+        return CGRect(
+            x: screen.minX,
+            y: screen.maxY - clampedHeight,
+            width: collapsedTabWidth + 8,
+            height: clampedHeight
         )
     }
 
@@ -65,8 +86,8 @@ struct LayoutEngine: Sendable {
     func expandedFrame(saved: CGRect, screen: CGRect) -> CGRect {
         var rect = saved
         // 画面外左
-        if rect.minX < sideRailWidth + collapsedTabWidth {
-            rect.origin.x = sideRailWidth + collapsedTabWidth + 8
+        if rect.minX < collapsedTabWidth + 8 {
+            rect.origin.x = collapsedTabWidth + 16
         }
         // 画面外右
         if rect.maxX > screen.maxX {

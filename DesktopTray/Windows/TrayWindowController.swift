@@ -13,6 +13,8 @@ import SwiftUI
 final class TrayWindowController {
     let trayID: UUID
     private let layoutEngine: LayoutEngine
+    /// アイテムホバー中はウィンドウ背景ドラッグを無効化するための共有トラッカー（Fix: アイテムD&D）。
+    private let dragHoverTracker = ItemDragHoverTracker()
 
     private(set) var panel: TrayPanel?
     private var moveObserver: NSObjectProtocol?
@@ -55,6 +57,7 @@ final class TrayWindowController {
             panel.hidesOnDeactivate = false
             panel.isReleasedWhenClosed = false
             panel.animationBehavior = .none
+            panel.dragHoverTracker = dragHoverTracker
             self.panel = panel
 
             moveObserver = NotificationCenter.default.addObserver(
@@ -68,7 +71,7 @@ final class TrayWindowController {
             }
         }
 
-        let rootView = AnyView(content())
+        let rootView = AnyView(content().environment(\.itemDragHoverTracker, dragHoverTracker))
         installGlassContentView(rootView: rootView, size: frame.size)
 
         panel?.setFrame(frame, display: true)
@@ -132,7 +135,7 @@ final class TrayWindowController {
         guard let panel,
               let hostingView = panel.contentView?.subviews.compactMap({ $0 as? NSHostingView<AnyView> }).first
         else { return }
-        hostingView.rootView = rootView
+        hostingView.rootView = AnyView(rootView.environment(\.itemDragHoverTracker, dragHoverTracker))
     }
 
     /// パネルを非表示にする。破棄はしない。

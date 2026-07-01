@@ -1,14 +1,38 @@
 import AppKit
 
+/// アイテム（ファイル/フォルダ）上をマウスがホバーしているかを SwiftUI 側から AppKit 側へ伝える。
+/// `TrayPanel` はこのフラグを見て、アイテム上では背景ドラッグ（＝ウィンドウ移動）を無効化する。
+/// 参照型で `TrayWindowController` が生成し、SwiftUI 側には `.environment` 経由で配る。
+@MainActor
+final class ItemDragHoverTracker {
+    /// 現在ホバー中のアイテム数。0/1 が通常だが、並び替えで消えたアイテムが
+    /// exit イベントを取りこぼしても壊れないようカウンタ方式にしている。
+    private var hoveredItemCount: Int = 0
+    var isHoveringItem: Bool { hoveredItemCount > 0 }
+
+    /// `wasHovering` と実際に変化した場合のみカウントする（同じ値の連続通知やビュー消滅時の
+    /// 二重減算を避けるため）。
+    func setHovering(_ hovering: Bool, wasHovering: Bool) {
+        guard hovering != wasHovering else { return }
+        hoveredItemCount = max(0, hoveredItemCount + (hovering ? 1 : -1))
+    }
+}
+
 /// トレイ表示用のカスタム `NSPanel`。
 /// `.nonactivatingPanel` + `.borderless` でデスクトップ上にフローティングする半透明パネルを実現する
 /// （技術スタック v0.1 §6.2）。
 final class TrayPanel: NSPanel {
+    /// アイテムホバー状態の共有元（`TrayWindowController` が設定する）。
+    var dragHoverTracker: ItemDragHoverTracker?
+
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
-    /// `nonactivatingPanel` でもドラッグ可能にするため、背景ドラッグを許可。
+    /// `nonactivatingPanel` でもトレイ自体をドラッグ移動できるよう、背景ドラッグを許可する。
+    /// ただしアイテム（ファイル/フォルダ）上をホバー中は無効化し、SwiftUI 側の `.draggable`
+    /// （トレイ間移動・並び替え、Fix F）にマウスイベントを譲る。両者は同じ mouseDown を奪い合うため、
+    /// 常時許可だとウィンドウ移動が勝ってしまいアイテム単体をドラッグできなくなる（要件定義 §7.6 不具合修正）。
     override var isMovableByWindowBackground: Bool {
-        get { true }
+        get { dragHoverTracker?.isHoveringItem != true }
         set { /* 固定 */ }
     }
 

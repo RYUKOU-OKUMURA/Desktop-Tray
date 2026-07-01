@@ -1,5 +1,18 @@
 import SwiftUI
 
+private struct ItemDragHoverTrackerKey: EnvironmentKey {
+    static let defaultValue = ItemDragHoverTracker()
+}
+
+extension EnvironmentValues {
+    /// `TrayWindowController` が配る、アイテムホバー状態の共有トラッカー。
+    /// `TrayPanel.isMovableByWindowBackground` がこれを見て背景ドラッグの可否を切り替える。
+    var itemDragHoverTracker: ItemDragHoverTracker {
+        get { self[ItemDragHoverTrackerKey.self] }
+        set { self[ItemDragHoverTrackerKey.self] = newValue }
+    }
+}
+
 /// 単一ファイル/フォルダ表示（要件定義 §16）。
 /// ホバーで軽く浮く、ファイル名は2行までで省略、stale は灰色オーバーレイ。
 /// 右クリックメニュー: 開く / Finder で表示 / トレイから外す（要件定義 §7.6）。
@@ -13,6 +26,7 @@ struct TrayItemView: View {
     let onUnassign: () -> Void
 
     @State private var isHovered: Bool = false
+    @Environment(\.itemDragHoverTracker) private var dragHoverTracker
 
     var body: some View {
         VStack(spacing: 6) {
@@ -45,7 +59,13 @@ struct TrayItemView: View {
                     .padding(4)
             }
         }
-        .onHover { isHovered = $0 }
+        .onHover { hovering in
+            dragHoverTracker.setHovering(hovering, wasHovering: isHovered)
+            isHovered = hovering
+        }
+        .onDisappear {
+            dragHoverTracker.setHovering(false, wasHovering: isHovered)
+        }
         .onTapGesture(count: 2, perform: onDoubleClick)
         .draggable(TrayItemTransfer(itemID: presentation.id, sourceTrayID: trayID))
         .contextMenu {

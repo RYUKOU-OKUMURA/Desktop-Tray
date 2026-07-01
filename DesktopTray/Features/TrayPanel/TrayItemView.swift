@@ -1,15 +1,23 @@
 import SwiftUI
 
-private struct ItemDragHoverTrackerKey: EnvironmentKey {
-    static let defaultValue = ItemDragHoverTracker()
+private struct ItemFrameTrackerKey: EnvironmentKey {
+    static let defaultValue = ItemFrameTracker()
 }
 
 extension EnvironmentValues {
-    /// `TrayWindowController` が配る、アイテムホバー状態の共有トラッカー。
+    /// `TrayWindowController` が配る、アイテム矩形群の共有トラッカー。
     /// `TrayPanel.isMovableByWindowBackground` がこれを見て背景ドラッグの可否を切り替える。
-    var itemDragHoverTracker: ItemDragHoverTracker {
-        get { self[ItemDragHoverTrackerKey.self] }
-        set { self[ItemDragHoverTrackerKey.self] = newValue }
+    var itemFrameTracker: ItemFrameTracker {
+        get { self[ItemFrameTrackerKey.self] }
+        set { self[ItemFrameTrackerKey.self] = newValue }
+    }
+}
+
+/// アイテムの表示矩形（`TrayPanelView.itemCoordinateSpace` 基準）を親へ伝える PreferenceKey。
+struct ItemFramePreferenceKey: PreferenceKey {
+    static var defaultValue: [CGRect] { [] }
+    static func reduce(value: inout [CGRect], nextValue: () -> [CGRect]) {
+        value.append(contentsOf: nextValue())
     }
 }
 
@@ -26,7 +34,6 @@ struct TrayItemView: View {
     let onUnassign: () -> Void
 
     @State private var isHovered: Bool = false
-    @Environment(\.itemDragHoverTracker) private var dragHoverTracker
 
     var body: some View {
         VStack(spacing: 6) {
@@ -59,13 +66,15 @@ struct TrayItemView: View {
                     .padding(4)
             }
         }
-        .onHover { hovering in
-            dragHoverTracker.setHovering(hovering, wasHovering: isHovered)
-            isHovered = hovering
-        }
-        .onDisappear {
-            dragHoverTracker.setHovering(false, wasHovering: isHovered)
-        }
+        .onHover { isHovered = $0 }
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: ItemFramePreferenceKey.self,
+                    value: [proxy.frame(in: .named(TrayPanelView.itemCoordinateSpace))]
+                )
+            }
+        )
         .onTapGesture(count: 2, perform: onDoubleClick)
         .draggable(TrayItemTransfer(itemID: presentation.id, sourceTrayID: trayID))
         .contextMenu {

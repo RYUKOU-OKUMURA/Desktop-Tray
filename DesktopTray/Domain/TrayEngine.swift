@@ -54,6 +54,11 @@ struct TrayEngine: Sendable {
     }
 
     /// トレイ間移動。所属トレイだけ変更し、ファイル実体は移動しない（要件定義 §7.3）。
+    /// 移動元がスマートトレイの場合、その中身はルール評価による計算結果であり実体の
+    /// 所属配列を持たないため「削除」はできない。その場合は移動先の手動トレイへの
+    /// 追加のみ行う。スマートトレイの表示内容は次回評価（`SmartTrayEvaluator`）で
+    /// 自動的に更新される（例:「未分類」ルールは手動未所属のアイテムのみを対象とするため、
+    /// 追加後は自動的にそちらの一覧から外れる）。
     @discardableResult
     func moveBetweenTrays(
         url: URL,
@@ -62,25 +67,30 @@ struct TrayEngine: Sendable {
         in trays: inout [Tray]
     ) -> Bool {
         guard fromID != toID else { return false }
-        guard let fromIdx = trays.firstIndex(where: { $0.id == fromID && $0.type == .manual }) else {
-            return false
-        }
         guard let toIdx = trays.firstIndex(where: { $0.id == toID && $0.type == .manual }) else {
             return false
         }
-        guard let itemIdx = trays[fromIdx].items.firstIndex(where: { $0.url == url }) else {
-            return false
-        }
-        if trays[toIdx].items.contains(where: { $0.url == url }) {
-            // 移動先に既に存在する場合は移動元から削除だけ行う
-            trays[fromIdx].items.remove(at: itemIdx)
+        let alreadyInDestination = trays[toIdx].items.contains(where: { $0.url == url })
+        let fromManualIdx = trays.firstIndex(where: { $0.id == fromID && $0.type == .manual })
+
+        if let fromIdx = fromManualIdx,
+           let itemIdx = trays[fromIdx].items.firstIndex(where: { $0.url == url }) {
+            if alreadyInDestination {
+                // 移動先に既に存在する場合は移動元から削除だけ行う
+                trays[fromIdx].items.remove(at: itemIdx)
+                reindex(in: &trays[fromIdx])
+                return true
+            }
+            var item = trays[fromIdx].items.remove(at: itemIdx)
+            item.sortIndex = trays[toIdx].items.count
+            trays[toIdx].items.append(item)
             reindex(in: &trays[fromIdx])
             return true
         }
-        var item = trays[fromIdx].items.remove(at: itemIdx)
-        item.sortIndex = trays[toIdx].items.count
-        trays[toIdx].items.append(item)
-        reindex(in: &trays[fromIdx])
+
+        // 移動元が手動トレイでない（＝スマートトレイ）場合はここに来る。
+        guard !alreadyInDestination else { return false }
+        trays[toIdx].items.append(TrayItem(url: url, sortIndex: trays[toIdx].items.count))
         return true
     }
 

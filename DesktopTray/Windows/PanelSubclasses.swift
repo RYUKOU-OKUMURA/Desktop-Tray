@@ -1,38 +1,54 @@
 import AppKit
 
-/// アイテム（ファイル/フォルダ）上をマウスがホバーしているかを SwiftUI 側から AppKit 側へ伝える。
-/// `TrayPanel` はこのフラグを見て、アイテム上では背景ドラッグ（＝ウィンドウ移動）を無効化する。
+/// 各アイテム（ファイル/フォルダ）の現在の表示矩形を SwiftUI 側から AppKit 側へ伝える。
+/// `TrayPanel` は mouseDown の座標をこの矩形群と突き合わせて、アイテム上での mouseDown なら
+/// 自前の背景ドラッグ（＝ウィンドウ移動）を開始しない。
 /// 参照型で `TrayWindowController` が生成し、SwiftUI 側には `.environment` 経由で配る。
+/// 矩形はパネルコンテンツ左上原点（SwiftUI 座標系）で保持する。
 @MainActor
-final class ItemDragHoverTracker {
-    /// 現在ホバー中のアイテム数。0/1 が通常だが、並び替えで消えたアイテムが
-    /// exit イベントを取りこぼしても壊れないようカウンタ方式にしている。
-    private var hoveredItemCount: Int = 0
-    var isHoveringItem: Bool { hoveredItemCount > 0 }
+final class ItemFrameTracker {
+    var itemFrames: [CGRect] = []
 
-    /// `wasHovering` と実際に変化した場合のみカウントする（同じ値の連続通知やビュー消滅時の
-    /// 二重減算を避けるため）。
-    func setHovering(_ hovering: Bool, wasHovering: Bool) {
-        guard hovering != wasHovering else { return }
-        hoveredItemCount = max(0, hoveredItemCount + (hovering ? 1 : -1))
+    func contains(_ point: CGPoint) -> Bool {
+        itemFrames.contains { $0.contains(point) }
     }
 }
 
 /// トレイ表示用のカスタム `NSPanel`。
 /// `.nonactivatingPanel` + `.borderless` でデスクトップ上にフローティングする半透明パネルを実現する
 /// （技術スタック v0.1 §6.2）。
+///
+/// 背景ドラッグ（トレイ移動）は AppKit 標準の `isMovableByWindowBackground` を使わず、
+/// このクラスで完全に自前実装している。
+/// 経緯（Fix: アイテムD&D）: `isMovableByWindowBackground` を動的に true/false 切り替える実装を
+/// 2度試したが（ホバー判定・mouseDown 座標判定）どちらも改善しなかった。調査の結果、
+/// ウィンドウ移動の可否は `isMovableByWindowBackground` そのものではなく、実際に mouseDown を
+/// 受け取った `NSView` の `mouseDownCanMoveWindow` が個別に判定しており、かつ SwiftUI の
+/// ジェスチャ処理とウィンドウ移動処理は「どちらか一方が勝つ」のではなく同時に走り得ることが
+/// わかった。そのため `NSHostingView` 側は `NonMovableHostingView`
+/// （`TrayWindowController` 参照）で `mouseDownCanMoveWindow` を常に `false` にして
+/// AppKit 標準の自動移動を完全に無効化し、トレイ移動自体は本クラスの `sendEvent` で
+/// mouseDown/mouseDragged/mouseUp を自前追跡して `setFrameOrigin` で実現する。
+/// こうすることで「アイテム上かどうか」の判定ロジックを完全に自分たちのコードだけで完結させ、
+/// AppKit 内部のブラックボックスな判定タイミングに依存しないようにしている。
 final class TrayPanel: NSPanel {
-    /// アイテムホバー状態の共有元（`TrayWindowController` が設定する）。
-    var dragHoverTracker: ItemDragHoverTracker?
+    /// アイテム矩形の共有元（`TrayWindowController` が設定する）。
+    var itemFrameTracker: ItemFrameTracker?
+    /// リサイズグリップ（`TrayWindowController` が設定する）。この上の mouseDown は
+    /// 背景ドラッグの対象から除外し、グリップ自身のリサイズ処理に譲る。
+    weak var resizeGripView: NSView?
+
+    /// 背景ドラッグの進行状態（開始時のマウス位置とウィンドウ原点）。
+    private var backgroundDrag: (mouseLocation: NSPoint, windowOrigin: NSPoint)?
+    /// この距離（pt）を超えて動くまではウィンドウを動かさない（クリックの手ぶれ対策）。
+    private static let backgroundDragThreshold: CGFloat = 3
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
-    /// `nonactivatingPanel` でもトレイ自体をドラッグ移動できるよう、背景ドラッグを許可する。
-    /// ただしアイテム（ファイル/フォルダ）上をホバー中は無効化し、SwiftUI 側の `.draggable`
-    /// （トレイ間移動・並び替え、Fix F）にマウスイベントを譲る。両者は同じ mouseDown を奪い合うため、
-    /// 常時許可だとウィンドウ移動が勝ってしまいアイテム単体をドラッグできなくなる（要件定義 §7.6 不具合修正）。
+    /// AppKit 標準の自動移動は使わない（上記クラスコメント参照）。常に無効化しておくことで、
+    /// 万一 `NonMovableHostingView` 以外の subview が将来追加されても暴走しない。
     override var isMovableByWindowBackground: Bool {
-        get { dragHoverTracker?.isHoveringItem != true }
+        get { false }
         set { /* 固定 */ }
     }
 
@@ -40,11 +56,52 @@ final class TrayPanel: NSPanel {
     /// クリック時に明示的にこのパネルだけを最前面へ引き上げる。
     /// `orderFrontRegardless()` はアプリのアクティブ化（他アプリからのフォーカス奪取）を伴わないため、
     /// nonactivating の「他アプリの作業を妨げない」特性は維持したまま前面化だけを行える。
+    ///
+    /// あわせて、アイテムでもリサイズグリップでもない場所での mouseDown を起点に、
+    /// 自前のウィンドウ背景ドラッグ（トレイ移動）を実装する。
     override func sendEvent(_ event: NSEvent) {
-        if event.type == .leftMouseDown || event.type == .rightMouseDown {
+        switch event.type {
+        case .leftMouseDown:
             orderFrontRegardless()
+            if isDraggableBackgroundPoint(event.locationInWindow) {
+                backgroundDrag = (NSEvent.mouseLocation, frame.origin)
+            } else {
+                backgroundDrag = nil
+            }
+        case .leftMouseDragged:
+            if let backgroundDrag {
+                let current = NSEvent.mouseLocation
+                let dx = current.x - backgroundDrag.mouseLocation.x
+                let dy = current.y - backgroundDrag.mouseLocation.y
+                // ヘッダー上のボタン等をタップした際の微小な手ぶれで意図せずウィンドウが
+                // ずれてタップ判定を壊さないよう、一定距離動くまでは実際には動かさない。
+                if max(abs(dx), abs(dy)) >= Self.backgroundDragThreshold {
+                    setFrameOrigin(
+                        NSPoint(x: backgroundDrag.windowOrigin.x + dx, y: backgroundDrag.windowOrigin.y + dy)
+                    )
+                }
+            }
+        case .leftMouseUp:
+            backgroundDrag = nil
+        case .rightMouseDown:
+            orderFrontRegardless()
+        default:
+            break
         }
         super.sendEvent(event)
+    }
+
+    /// window 座標（左下原点）の点が「アイテムでもリサイズグリップでもない背景」かどうかを判定する。
+    private func isDraggableBackgroundPoint(_ locationInWindow: NSPoint) -> Bool {
+        if let resizeGripView, resizeGripView.frame.contains(locationInWindow) {
+            return false
+        }
+        guard let tracker = itemFrameTracker, let contentHeight = contentView?.bounds.height else {
+            return true
+        }
+        // window 座標（左下原点）→ SwiftUI 座標（左上原点）へ変換。
+        let flipped = CGPoint(x: locationInWindow.x, y: contentHeight - locationInWindow.y)
+        return !tracker.contains(flipped)
     }
 }
 

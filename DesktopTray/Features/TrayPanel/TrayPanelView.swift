@@ -4,6 +4,9 @@ import SwiftUI
 /// ガラス背景は `TrayWindowController` 側の `NSVisualEffectView` (contentView) が提供する。
 /// 収納 UI は TabRail が担うため、本 View は展開パネルのみ描画する（Fix G）。
 struct TrayPanelView: View {
+    /// アイテム矩形をトラッキングするための座標空間名。`TrayItemView` の GeometryReader が参照する。
+    static let itemCoordinateSpace = "TrayPanelView.items"
+
     let tray: Tray
     let trayID: UUID
     let items: [TrayItemPresentation]
@@ -15,6 +18,8 @@ struct TrayPanelView: View {
     let onReorder: (UUID, Int) -> Void
     let onMoveFromOtherTray: (UUID, UUID) -> Void
     @Binding var toastMessage: String?
+
+    @Environment(\.itemFrameTracker) private var itemFrameTracker
 
     var body: some View {
         VStack(spacing: 0) {
@@ -52,6 +57,10 @@ struct TrayPanelView: View {
             width: max(TrayTheme.trayWidthRange.lowerBound, 360),
             height: max(TrayTheme.trayHeightRange.lowerBound, 260)
         )
+        .coordinateSpace(name: Self.itemCoordinateSpace)
+        .onPreferenceChange(ItemFramePreferenceKey.self) { frames in
+            itemFrameTracker.itemFrames = frames
+        }
         .toast(message: $toastMessage)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text(tray.name))

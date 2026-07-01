@@ -130,6 +130,58 @@ final class TrayEngineTests: XCTestCase {
         XCTAssertEqual(trays[0].items.count, 1)
     }
 
+    /// スマートトレイ（例:「未分類」）は実体としての所属配列を持たないため、
+    /// そこからのドラッグ移動は移動先の手動トレイへの追加として扱われる（不具合修正）。
+    func test_moveBetweenTrays_fromSmartTrayAssignsToDestination() {
+        let url = URL(fileURLWithPath: "/Users/demo/Desktop/file.pdf")
+        let smartTray = Tray(
+            name: "未分類",
+            type: .smart,
+            color: .gray,
+            frame: TrayFrame(width: 400, height: 300),
+            rule: SmartTrayRule(kind: .uncategorized)
+        )
+        let manualTray = makeManualTray()
+        var trays = [smartTray, manualTray]
+        let engine = TrayEngine()
+
+        let moved = engine.moveBetweenTrays(
+            url: url,
+            from: smartTray.id,
+            to: manualTray.id,
+            in: &trays
+        )
+
+        XCTAssertTrue(moved)
+        XCTAssertEqual(trays[1].items.count, 1)
+        XCTAssertEqual(trays[1].items[0].url, url)
+    }
+
+    /// スマートトレイへは手動で追加できないため、移動先がスマートトレイなら no-op のまま。
+    func test_moveBetweenTrays_toSmartTrayIsNoop() {
+        let url = URL(fileURLWithPath: "/Users/demo/Desktop/file.pdf")
+        let manualTray = makeManualTray(items: [TrayItem(url: url, sortIndex: 0)])
+        let smartTray = Tray(
+            name: "PDF",
+            type: .smart,
+            color: .pink,
+            frame: TrayFrame(width: 400, height: 300),
+            rule: SmartTrayRule(kind: .fileExtensionIn(["pdf"]))
+        )
+        var trays = [manualTray, smartTray]
+        let engine = TrayEngine()
+
+        let moved = engine.moveBetweenTrays(
+            url: url,
+            from: manualTray.id,
+            to: smartTray.id,
+            in: &trays
+        )
+
+        XCTAssertFalse(moved)
+        XCTAssertEqual(trays[0].items.count, 1)
+    }
+
     func test_updateTrayLayout_setsFrameAndCollapsed() {
         let tray = makeManualTray()
         var trays = [tray]

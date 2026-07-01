@@ -1,6 +1,17 @@
 import AppKit
 import SwiftUI
 
+/// SwiftUI コンテンツ上での mouseDown が AppKit 標準のウィンドウ背景ドラッグを
+/// 一切トリガーしないようにする `NSHostingView`（Fix: アイテムD&D）。
+/// `mouseDownCanMoveWindow` は AppKit がウィンドウ移動の可否を実際に判定する箇所であり、
+/// `NSWindow.isMovableByWindowBackground` を動的に切り替えるだけでは確実に反映されなかった
+/// （詳細は `TrayPanel` のコメント参照）。ここで常に `false` を返すことで、
+/// アイテムの `.draggable` がウィンドウ移動と競合する余地を完全になくす。
+/// トレイ自体の移動は `TrayPanel.sendEvent` 側で自前実装している。
+final class NonMovableHostingView<Content: View>: NSHostingView<Content> {
+    override var mouseDownCanMoveWindow: Bool { false }
+}
+
 /// 1 トレイ = 1 `NSPanel` の生成・更新・破棄を担う（アーキテクチャ v0.1 §3.2）。
 /// ドラッグ追従・左端 snap 判定・収納/展開アニメーションをここで制御する。
 ///
@@ -13,8 +24,8 @@ import SwiftUI
 final class TrayWindowController {
     let trayID: UUID
     private let layoutEngine: LayoutEngine
-    /// アイテムホバー中はウィンドウ背景ドラッグを無効化するための共有トラッカー（Fix: アイテムD&D）。
-    private let dragHoverTracker = ItemDragHoverTracker()
+    /// アイテム上での mouseDown 時にウィンドウ背景ドラッグを無効化するための共有トラッカー（Fix: アイテムD&D）。
+    private let itemFrameTracker = ItemFrameTracker()
 
     private(set) var panel: TrayPanel?
     private var moveObserver: NSObjectProtocol?
@@ -57,7 +68,7 @@ final class TrayWindowController {
             panel.hidesOnDeactivate = false
             panel.isReleasedWhenClosed = false
             panel.animationBehavior = .none
-            panel.dragHoverTracker = dragHoverTracker
+            panel.itemFrameTracker = itemFrameTracker
             self.panel = panel
 
             moveObserver = NotificationCenter.default.addObserver(
@@ -71,7 +82,7 @@ final class TrayWindowController {
             }
         }
 
-        let rootView = AnyView(content().environment(\.itemDragHoverTracker, dragHoverTracker))
+        let rootView = AnyView(content().environment(\.itemFrameTracker, itemFrameTracker))
         installGlassContentView(rootView: rootView, size: frame.size)
 
         panel?.setFrame(frame, display: true)
@@ -87,7 +98,7 @@ final class TrayWindowController {
         guard let panel else { return }
 
         if let container = panel.contentView,
-           let hostingView = container.subviews.compactMap({ $0 as? NSHostingView<AnyView> }).first {
+           let hostingView = container.subviews.compactMap({ $0 as? NonMovableHostingView<AnyView> }).first {
             hostingView.rootView = rootView
             return
         }
@@ -106,7 +117,7 @@ final class TrayWindowController {
         effectView.alphaValue = TrayTheme.glassAlpha
         container.addSubview(effectView)
 
-        let hostingView = NSHostingView(rootView: rootView)
+        let hostingView = NonMovableHostingView(rootView: rootView)
         hostingView.frame = container.bounds
         hostingView.autoresizingMask = [.width, .height]
         hostingView.wantsLayer = true
@@ -126,6 +137,7 @@ final class TrayWindowController {
             self.onFrameChanged(panel.frame)
         }
         container.addSubview(grip)
+        panel.resizeGripView = grip
 
         panel.contentView = container
     }
@@ -133,9 +145,9 @@ final class TrayWindowController {
     /// コンテンツ（AnyView）を差し替える。ガラス背景は維持したまま SwiftUI のみ更新。
     func updateContentView(_ rootView: AnyView) {
         guard let panel,
-              let hostingView = panel.contentView?.subviews.compactMap({ $0 as? NSHostingView<AnyView> }).first
+              let hostingView = panel.contentView?.subviews.compactMap({ $0 as? NonMovableHostingView<AnyView> }).first
         else { return }
-        hostingView.rootView = AnyView(rootView.environment(\.itemDragHoverTracker, dragHoverTracker))
+        hostingView.rootView = AnyView(rootView.environment(\.itemFrameTracker, itemFrameTracker))
     }
 
     /// パネルを非表示にする。破棄はしない。

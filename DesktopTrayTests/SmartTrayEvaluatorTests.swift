@@ -97,6 +97,23 @@ final class SmartTrayEvaluatorTests: XCTestCase {
         XCTAssertEqual(results[images.id]?.count, 2)
     }
 
+    /// 再評価のたびに ID が変わると、ドラッグ中の識別子（`TrayItemTransfer.itemID`）や
+    /// アイコンキャッシュが無効化されてしまう（不具合修正: スマートトレイからのドラッグ移動）。
+    /// 同じ URL には常に同じ ID が振られることを確認する。
+    func test_evaluate_assignsStableIDsAcrossReevaluation() {
+        let pdf = SmartTrayPresets.pdf
+        let trays = [pdf]
+        let items = [makeItem(name: "spec", ext: "pdf")]
+
+        let first = evaluator.evaluate(items: items, trays: trays)
+        let second = evaluator.evaluate(items: items, trays: trays)
+
+        let firstID = first[pdf.id]?.first?.id
+        let secondID = second[pdf.id]?.first?.id
+        XCTAssertNotNil(firstID)
+        XCTAssertEqual(firstID, secondID)
+    }
+
     func test_evaluate_uncategorized_excludesManualAssignedAndSmartMatched() {
         let screenshots = SmartTrayPresets.screenshots
         let pdf = SmartTrayPresets.pdf

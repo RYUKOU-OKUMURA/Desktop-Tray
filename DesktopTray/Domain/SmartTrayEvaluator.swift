@@ -19,7 +19,7 @@ struct SmartTrayEvaluator: Sendable {
             guard case .uncategorized = rule.kind else {
                 let matched = items.filter { matches(rule: rule, item: $0) }
                 let trayItems = matched.enumerated().map { idx, item in
-                    TrayItem(url: item.url, sortIndex: idx)
+                    TrayItem(id: TrayItem.stableID(for: item.url), url: item.url, sortIndex: idx)
                 }
                 results[tray.id] = trayItems
                 allMatchedURLs.formUnion(matched.map(\.url))
@@ -34,7 +34,7 @@ struct SmartTrayEvaluator: Sendable {
                 !manualAssignedURLs.contains(item.url) && !allMatchedURLs.contains(item.url)
             }
             let trayItems = uncategorized.enumerated().map { idx, item in
-                TrayItem(url: item.url, sortIndex: idx)
+                TrayItem(id: TrayItem.stableID(for: item.url), url: item.url, sortIndex: idx)
             }
             results[tray.id] = trayItems
         }

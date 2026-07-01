@@ -4,6 +4,7 @@
 "tray.new" = "新規トレイ";
 "tray.collapse" = "収納";
 "tray.expand" = "展開";
+"tray.resize" = "ドラッグしてサイズ変更";
 "tray.smart.badge" = "Smart";
 "tray.count.suffix" = "件";
 "tray.stale" = "見つかりません";

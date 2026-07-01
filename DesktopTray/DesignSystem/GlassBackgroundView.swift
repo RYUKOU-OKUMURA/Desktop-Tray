@@ -10,7 +10,7 @@ struct GlassBackgroundView: NSViewRepresentable {
     let emphasized: Bool
 
     init(
-        material: NSVisualEffectView.Material = .hudWindow,
+        material: NSVisualEffectView.Material = .sidebar,
         blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
         emphasized: Bool = false
     ) {
@@ -71,7 +71,7 @@ extension View {
     func glassBackground(
         cornerRadius: CGFloat = TrayTheme.cornerRadius,
         lineWidth: CGFloat = TrayTheme.borderWidth,
-        material: NSVisualEffectView.Material = .hudWindow
+        material: NSVisualEffectView.Material = .sidebar
     ) -> some View {
         modifier(
             GlassBackground(

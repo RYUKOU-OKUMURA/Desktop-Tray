@@ -9,6 +9,8 @@ final class OverlayWindowManager {
     private var controllers: [UUID: TrayWindowController] = [:]
 
     var contentProvider: ((UUID) -> AnyView)?
+    /// ドラッグ移動・リサイズでトレイの frame が確定したときに呼ばれる（永続化用）。
+    var onTrayFrameChanged: ((UUID, CGRect) -> Void)?
 
     init(layoutEngine: LayoutEngine = LayoutEngine()) {
         self.layoutEngine = layoutEngine
@@ -23,6 +25,9 @@ final class OverlayWindowManager {
 
         for tray in trays {
             let controller = TrayWindowController(trayID: tray.id, layoutEngine: layoutEngine)
+            controller.onFrameChanged = { [weak self] frame in
+                self?.onTrayFrameChanged?(tray.id, frame)
+            }
             let content = contentProvider?(tray.id) ?? AnyView(EmptyView())
             let expanded = layoutEngine.expandedFrame(saved: tray.frame.cgRect, screen: visible)
             controller.show(content: { content }, frame: expanded)
@@ -38,6 +43,9 @@ final class OverlayWindowManager {
     func addTray(_ tray: Tray) {
         guard controllers[tray.id] == nil else { return }
         let controller = TrayWindowController(trayID: tray.id, layoutEngine: layoutEngine)
+        controller.onFrameChanged = { [weak self] frame in
+            self?.onTrayFrameChanged?(tray.id, frame)
+        }
         let content = contentProvider?(tray.id) ?? AnyView(EmptyView())
         let visible = LayoutEngine.combinedVisibleFrame()
         let frame = layoutEngine.expandedFrame(saved: tray.frame.cgRect, screen: visible)

@@ -122,6 +122,18 @@ struct LayoutEngine: Sendable {
         return union
     }
 
+    /// メニューバーのあるプライマリディスプレイの visibleFrame を返す。
+    /// 左端収納（TabRail・デフォルトトレイ配置）はこの画面を基準にする。
+    /// `combinedVisibleFrame()`（全ディスプレイ外接矩形）を基準にすると、
+    /// サブディスプレイがメインディスプレイの左側に配置されている環境で
+    /// 「左端」がサブディスプレイ側になってしまうため区別する。
+    static func primaryScreenVisibleFrame() -> CGRect {
+        guard let primary = NSScreen.screens.first else {
+            return CGRect(x: 0, y: 0, width: 1440, height: 900)
+        }
+        return primary.visibleFrame
+    }
+
     /// 指定 frame を combinedVisibleFrame 内へ clamp。
     func clampToVisibleFrames(_ frame: CGRect) -> CGRect {
         let visible = Self.combinedVisibleFrame()

@@ -11,7 +11,7 @@ struct ToastView: View {
             .foregroundStyle(.primary)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .glassBackground(cornerRadius: 14, lineWidth: 0.5, material: .hudWindow)
+            .glassBackground(cornerRadius: 14, lineWidth: 0.5, material: .sidebar)
             .transition(
                 .opacity
                     .combined(with: .move(edge: .bottom))

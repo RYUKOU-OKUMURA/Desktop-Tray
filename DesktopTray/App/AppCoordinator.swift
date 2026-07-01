@@ -61,6 +61,9 @@ final class AppCoordinator {
         overlayManager.contentProvider = { [weak self] trayID in
             self?.makeTrayContent(for: trayID) ?? AnyView(EmptyView())
         }
+        overlayManager.onTrayFrameChanged = { [weak self] trayID, frame in
+            self?.handleTrayFrameChanged(trayID: trayID, frame: frame)
+        }
 
         overlayManager.restoreWindows(from: listViewModel.trays)
         refreshTabRail()
@@ -318,6 +321,13 @@ final class AppCoordinator {
             )
             panelViewModels[toTrayID]?.showToast(message)
         }
+        saveSnapshot()
+    }
+
+    /// ドラッグ移動・リサイズで確定した frame を永続化する。
+    private func handleTrayFrameChanged(trayID: UUID, frame: CGRect) {
+        guard let tray = listViewModel.trays.first(where: { $0.id == trayID }) else { return }
+        listViewModel.updateLayout(trayID: trayID, frame: TrayFrame(frame), collapsed: tray.isCollapsed)
         saveSnapshot()
     }
 

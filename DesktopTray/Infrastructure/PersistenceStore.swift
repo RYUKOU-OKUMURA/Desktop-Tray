@@ -137,7 +137,7 @@ final class PersistenceStore: @unchecked Sendable {
     /// 手動トレイ5種 + スマートトレイプリセット5種。
     /// スクリーンショットはスマートトレイとして提供するため手動には含めない。
     static func defaultTrays() -> [Tray] {
-        let visible = LayoutEngine.combinedVisibleFrame()
+        let visible = LayoutEngine.primaryScreenVisibleFrame()
         let width: CGFloat = 400
         let height: CGFloat = 300
         let startX: CGFloat = visible.minX + 80

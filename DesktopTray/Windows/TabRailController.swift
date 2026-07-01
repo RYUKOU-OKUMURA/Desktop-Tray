@@ -19,7 +19,7 @@ final class TabRailController {
         onNewTray: @escaping () -> Void,
         onOpenSettings: @escaping () -> Void
     ) {
-        let visible = screen ?? LayoutEngine.combinedVisibleFrame()
+        let visible = screen ?? LayoutEngine.primaryScreenVisibleFrame()
         let tabs = collapsedTrays
             .sorted { $0.tabIndex < $1.tabIndex }
             .map { tray in
@@ -96,7 +96,7 @@ final class TabRailController {
             }
         } else {
             let effectView = NSVisualEffectView()
-            effectView.material = .hudWindow
+            effectView.material = .sidebar
             effectView.blendingMode = .behindWindow
             effectView.state = .active
             effectView.frame = NSRect(origin: .zero, size: size)

@@ -92,7 +92,7 @@ final class TrayWindowController {
             }
         } else {
             let effectView = NSVisualEffectView()
-            effectView.material = .hudWindow
+            effectView.material = .sidebar
             effectView.blendingMode = .behindWindow
             effectView.state = .active
             effectView.frame = NSRect(origin: .zero, size: size)
@@ -106,6 +106,21 @@ final class TrayWindowController {
             hostingView.autoresizingMask = [.width, .height]
             hostingView.wantsLayer = true
             effectView.addSubview(hostingView)
+
+            let gripSize: CGFloat = 16
+            let grip = ResizeGripView(
+                frame: NSRect(x: size.width - gripSize, y: 0, width: gripSize, height: gripSize)
+            )
+            grip.autoresizingMask = [.minXMargin, .maxYMargin]
+            grip.minSize = NSSize(
+                width: TrayTheme.trayWidthRange.lowerBound,
+                height: layoutEngine.minTrayHeight
+            )
+            grip.onResizeEnd = { [weak self] in
+                guard let self, let panel = self.panel else { return }
+                self.onFrameChanged(panel.frame)
+            }
+            effectView.addSubview(grip)
 
             panel.contentView = effectView
         }

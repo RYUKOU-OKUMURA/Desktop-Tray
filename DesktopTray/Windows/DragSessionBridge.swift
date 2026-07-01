@@ -130,3 +130,115 @@ struct FileDropRepresentable: NSViewRepresentable {
         }
     }
 }
+
+extension NSPasteboard.PasteboardType {
+    /// トレイアイテムのドラッグ&ドロップ専用のペーストボード型（アプリ内限定）。
+    static let trayItem = NSPasteboard.PasteboardType("com.desktoptray.tray-item")
+}
+
+/// トレイアイテムのアプリ内ドラッグ状態を保持する（不具合修正: トレイ間移動）。
+/// 各トレイは別ウィンドウ（`NSPanel`）のため、SwiftUI の `.draggable`/`.dropDestination` は
+/// 別ウィンドウ発のドラッグを確実に受け取れない（クロスウィンドウD&Dの信頼性問題）。
+/// 全トレイが同一プロセスであることを利用し、ペイロードをペーストボードでシリアライズせず
+/// このコーディネータで直接受け渡す（`IconProvider.shared` 等と同じ単純なシングルトン方式）。
+/// ペーストボードには型登録のみ行い、ドラッグを認識させる（実データは持たせない）。
+@MainActor
+final class TrayItemDragCoordinator {
+    static let shared = TrayItemDragCoordinator()
+
+    private(set) var current: TrayItemTransfer?
+
+    private init() {}
+
+    func begin(_ transfer: TrayItemTransfer) {
+        current = transfer
+    }
+
+    func clear() {
+        current = nil
+    }
+}
+
+/// 別トレイ（別ウィンドウ）からドラッグされたアイテムを受け取る NSView サブクラス。
+/// `FileDropView` と同じ構造（`NSDraggingDestination` + hitTest 透過）を踏襲することで、
+/// SwiftUI のクロスウィンドウ D&D の不確実性を回避する（不具合修正: トレイ間移動）。
+/// ペイロードは `TrayItemDragCoordinator` から読む。
+@MainActor
+final class TrayItemDropView: NSView {
+    var trayID: UUID = UUID()
+    var itemFrameTracker: ItemFrameTracker?
+    /// 同一トレイ内での並び替えが確定したとき呼ばれる（itemID, newIndex）。
+    var onReorder: ((UUID, Int) -> Void)?
+    /// 別トレイからアイテムが移動してきたとき呼ばれる（itemID, sourceTrayID）。
+    var onMove: ((UUID, UUID) -> Void)?
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        registerForDraggedTypes([.trayItem])
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        registerForDraggedTypes([.trayItem])
+    }
+
+    /// マウスクリックは透過する（`FileDropView` と同じ理由）。
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        .move
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        .move
+    }
+
+    override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        true
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard let transfer = TrayItemDragCoordinator.shared.current else { return false }
+
+        let location = flippedLocation(for: sender.draggingLocation)
+        if transfer.sourceTrayID == trayID {
+            onReorder?(transfer.itemID, nearestIndex(for: location))
+        } else {
+            onMove?(transfer.itemID, transfer.sourceTrayID)
+        }
+        return true
+    }
+
+    override func draggingEnded(_ sender: NSDraggingInfo) {
+        TrayItemDragCoordinator.shared.clear()
+    }
+
+    /// window 座標（左下原点）→ SwiftUI 座標（左上原点）へ変換。
+    /// `TrayPanel.isDraggableBackgroundPoint`（PanelSubclasses.swift）と同じ式。
+    private func flippedLocation(for locationInWindow: NSPoint) -> CGPoint {
+        let local = convert(locationInWindow, from: nil)
+        return CGPoint(x: local.x, y: bounds.height - local.y)
+    }
+
+    /// ドロップ位置を含む、または中心が最も近いアイテムのインデックスを返す。
+    /// アイテムが1つもない場合は 0。
+    private func nearestIndex(for point: CGPoint) -> Int {
+        guard let frames = itemFrameTracker?.itemFrames, !frames.isEmpty else { return 0 }
+        if let containingIndex = frames.firstIndex(where: { $0.contains(point) }) {
+            return containingIndex
+        }
+        var nearestIndex = frames.count - 1
+        var nearestDistance = CGFloat.greatestFiniteMagnitude
+        for (index, rect) in frames.enumerated() {
+            let center = CGPoint(x: rect.midX, y: rect.midY)
+            let distance = hypot(center.x - point.x, center.y - point.y)
+            if distance < nearestDistance {
+                nearestDistance = distance
+                nearestIndex = index
+            }
+        }
+        return nearestIndex
+    }
+}

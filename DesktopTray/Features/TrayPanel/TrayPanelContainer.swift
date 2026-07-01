@@ -11,8 +11,6 @@ struct TrayPanelContainer: View {
     let sourceItems: [TrayItem]
     let onCollapse: () -> Void
     let onUnassign: (TrayItemPresentation) -> Void
-    let onReorder: (UUID, Int) -> Void
-    let onMoveFromOtherTray: (UUID, UUID) -> Void
     let onFileDrop: ([URL]) -> Void
 
     var body: some View {
@@ -35,8 +33,6 @@ struct TrayPanelContainer: View {
             },
             onItemUnassign: onUnassign,
             onCollapse: onCollapse,
-            onReorder: onReorder,
-            onMoveFromOtherTray: onMoveFromOtherTray,
             toastMessage: $viewModel.toastMessage
         )
         .overlay {

@@ -76,7 +76,23 @@ struct TrayItemView: View {
             }
         )
         .onTapGesture(count: 2, perform: onDoubleClick)
-        .draggable(TrayItemTransfer(itemID: presentation.id, sourceTrayID: trayID))
+        // 各トレイは別ウィンドウ（NSPanel）のため、SwiftUI の `.draggable`/`.dropDestination` は
+        // 別ウィンドウ発のドラッグを確実に受け取れない。ネイティブな `NSDraggingSession` を
+        // 起動し、ペイロードは `TrayItemDragCoordinator` 経由でアプリ内直接受け渡しする
+        // （`TrayItemDropView` が受け取る。不具合修正: トレイ間移動）。
+        .onDrag {
+            let transfer = TrayItemTransfer(itemID: presentation.id, sourceTrayID: trayID)
+            TrayItemDragCoordinator.shared.begin(transfer)
+            let provider = NSItemProvider()
+            provider.registerDataRepresentation(
+                forTypeIdentifier: NSPasteboard.PasteboardType.trayItem.rawValue,
+                visibility: .ownProcess
+            ) { completion in
+                completion(Data(), nil)
+                return nil
+            }
+            return provider
+        }
         .contextMenu {
             Button {
                 onDoubleClick()

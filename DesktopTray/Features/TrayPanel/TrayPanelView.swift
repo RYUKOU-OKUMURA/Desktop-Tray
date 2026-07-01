@@ -15,8 +15,6 @@ struct TrayPanelView: View {
     let onItemReveal: (TrayItemPresentation) -> Void
     let onItemUnassign: (TrayItemPresentation) -> Void
     let onCollapse: () -> Void
-    let onReorder: (UUID, Int) -> Void
-    let onMoveFromOtherTray: (UUID, UUID) -> Void
     @Binding var toastMessage: String?
 
     @Environment(\.itemFrameTracker) private var itemFrameTracker
@@ -47,15 +45,20 @@ struct TrayPanelView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.bottom, 12)
+                .frame(maxWidth: .infinity, minHeight: dropAreaMinHeight, alignment: .top)
                 .animation(Animations.itemAppear, value: items.count)
-                .dropDestination(for: TrayItemTransfer.self) { transfers, location in
-                    handleDrop(transfers: transfers, location: location)
-                }
             }
+            // ScrollView 自体を残りの高さいっぱいに広げる。
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        // パネル（NSPanel）全体を埋めるよう伸縮させる。固定サイズだとリサイズで拡大した際に
+        // 中央寄せの余白ができてしまう。最小サイズは維持する。
         .frame(
-            width: max(TrayTheme.trayWidthRange.lowerBound, 360),
-            height: max(TrayTheme.trayHeightRange.lowerBound, 260)
+            minWidth: max(TrayTheme.trayWidthRange.lowerBound, 360),
+            maxWidth: .infinity,
+            minHeight: max(TrayTheme.trayHeightRange.lowerBound, 260),
+            maxHeight: .infinity,
+            alignment: .top
         )
         .coordinateSpace(name: Self.itemCoordinateSpace)
         .onPreferenceChange(ItemFramePreferenceKey.self) { frames in
@@ -66,27 +69,8 @@ struct TrayPanelView: View {
         .accessibilityLabel(Text(tray.name))
     }
 
-    private func handleDrop(transfers: [TrayItemTransfer], location: CGPoint) -> Bool {
-        guard let transfer = transfers.first else { return false }
-        if transfer.sourceTrayID == trayID {
-            let index = nearestIndex(for: location, itemCount: items.count)
-            onReorder(transfer.itemID, index)
-        } else {
-            onMoveFromOtherTray(transfer.itemID, transfer.sourceTrayID)
-        }
-        return true
-    }
-
-    private func nearestIndex(for location: CGPoint, itemCount: Int) -> Int {
-        guard itemCount > 0 else { return 0 }
-        let columns = gridColumns.count
-        let estimatedRowHeight: CGFloat = 100
-        let estimatedCellWidth: CGFloat = 90
-        let row = max(0, Int(location.y / estimatedRowHeight))
-        let col = min(columns - 1, max(0, Int(location.x / estimatedCellWidth)))
-        let index = min(itemCount, row * columns + col)
-        return max(0, index)
-    }
+    /// グリッド領域の最小高さ。アイテムが空でもレイアウトが潰れないようにする。
+    private var dropAreaMinHeight: CGFloat { 120 }
 
     private var header: some View {
         HStack(spacing: 8) {

@@ -36,6 +36,10 @@ final class TrayWindowController {
     var onSnapStateChanged: (Bool) -> Void = { _ in }
     /// パネルが閉じられたとき呼ばれる。
     var onClose: (() -> Void)?
+    /// 同一トレイ内で並び替えが確定したとき呼ばれる（itemID, newIndex）。
+    var onItemReorder: (UUID, Int) -> Void = { _, _ in }
+    /// 別トレイからアイテムが移動してきたとき呼ばれる（itemID, sourceTrayID）。
+    var onItemMove: (UUID, UUID) -> Void = { _, _ in }
 
     init(trayID: UUID, layoutEngine: LayoutEngine) {
         self.trayID = trayID
@@ -122,6 +126,20 @@ final class TrayWindowController {
         hostingView.autoresizingMask = [.width, .height]
         hostingView.wantsLayer = true
         container.addSubview(hostingView)
+
+        // 別ウィンドウ（別トレイ）から発生したドラッグを確実に受け取るためのネイティブ受け口。
+        // SwiftUI のクロスウィンドウ D&D は信頼できないため使わない（不具合修正: トレイ間移動）。
+        let dropView = TrayItemDropView(frame: container.bounds)
+        dropView.autoresizingMask = [.width, .height]
+        dropView.trayID = trayID
+        dropView.itemFrameTracker = itemFrameTracker
+        dropView.onReorder = { [weak self] itemID, index in
+            self?.onItemReorder(itemID, index)
+        }
+        dropView.onMove = { [weak self] itemID, sourceTrayID in
+            self?.onItemMove(itemID, sourceTrayID)
+        }
+        container.addSubview(dropView)
 
         let gripSize: CGFloat = 16
         let grip = ResizeGripView(

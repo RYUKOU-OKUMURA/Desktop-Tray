@@ -11,6 +11,10 @@ final class OverlayWindowManager {
     var contentProvider: ((UUID) -> AnyView)?
     /// ドラッグ移動・リサイズでトレイの frame が確定したときに呼ばれる（永続化用）。
     var onTrayFrameChanged: ((UUID, CGRect) -> Void)?
+    /// 同一トレイ内で並び替えが確定したとき呼ばれる（trayID, itemID, newIndex）。
+    var onItemReorder: ((UUID, UUID, Int) -> Void)?
+    /// 別トレイからアイテムが移動してきたとき呼ばれる（toTrayID, itemID, fromTrayID）。
+    var onItemMove: ((UUID, UUID, UUID) -> Void)?
 
     init(layoutEngine: LayoutEngine = LayoutEngine()) {
         self.layoutEngine = layoutEngine
@@ -27,6 +31,12 @@ final class OverlayWindowManager {
             let controller = TrayWindowController(trayID: tray.id, layoutEngine: layoutEngine)
             controller.onFrameChanged = { [weak self] frame in
                 self?.onTrayFrameChanged?(tray.id, frame)
+            }
+            controller.onItemReorder = { [weak self] itemID, index in
+                self?.onItemReorder?(tray.id, itemID, index)
+            }
+            controller.onItemMove = { [weak self] itemID, fromTrayID in
+                self?.onItemMove?(tray.id, itemID, fromTrayID)
             }
             let content = contentProvider?(tray.id) ?? AnyView(EmptyView())
             let expanded = layoutEngine.expandedFrame(saved: tray.frame.cgRect, screen: visible)
@@ -45,6 +55,12 @@ final class OverlayWindowManager {
         let controller = TrayWindowController(trayID: tray.id, layoutEngine: layoutEngine)
         controller.onFrameChanged = { [weak self] frame in
             self?.onTrayFrameChanged?(tray.id, frame)
+        }
+        controller.onItemReorder = { [weak self] itemID, index in
+            self?.onItemReorder?(tray.id, itemID, index)
+        }
+        controller.onItemMove = { [weak self] itemID, fromTrayID in
+            self?.onItemMove?(tray.id, itemID, fromTrayID)
         }
         let content = contentProvider?(tray.id) ?? AnyView(EmptyView())
         let visible = LayoutEngine.combinedVisibleFrame()

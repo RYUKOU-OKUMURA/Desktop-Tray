@@ -64,6 +64,12 @@ final class AppCoordinator {
         overlayManager.onTrayFrameChanged = { [weak self] trayID, frame in
             self?.handleTrayFrameChanged(trayID: trayID, frame: frame)
         }
+        overlayManager.onItemReorder = { [weak self] trayID, itemID, index in
+            self?.reorderItem(itemID: itemID, in: trayID, to: index)
+        }
+        overlayManager.onItemMove = { [weak self] toTrayID, itemID, fromTrayID in
+            self?.moveItem(itemID: itemID, from: fromTrayID, to: toTrayID)
+        }
 
         overlayManager.restoreWindows(from: listViewModel.trays)
         refreshTabRail()
@@ -131,12 +137,6 @@ final class AppCoordinator {
                 },
                 onUnassign: { [weak self] presentation in
                     self?.unassignItem(presentation: presentation, from: trayID)
-                },
-                onReorder: { [weak self] itemID, index in
-                    self?.reorderItem(itemID: itemID, in: trayID, to: index)
-                },
-                onMoveFromOtherTray: { [weak self] itemID, fromTrayID in
-                    self?.moveItem(itemID: itemID, from: fromTrayID, to: trayID)
                 },
                 onFileDrop: { [weak self] urls in
                     self?.handleFileDrop(urls: urls, into: trayID)

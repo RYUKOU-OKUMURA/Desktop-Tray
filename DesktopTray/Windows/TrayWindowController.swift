@@ -75,71 +75,64 @@ final class TrayWindowController {
         panel?.orderFrontRegardless()
     }
 
-    /// `NSVisualEffectView` を `panel.contentView` に設定し、その上に `NSHostingView` を乗せる。
-    /// 既存の場合は hostingView の rootView を差し替える。
+    /// 透明度を独立して調整できるよう、ガラス背景 (`NSVisualEffectView`) と
+    /// SwiftUI コンテンツ (`NSHostingView`) を親子ではなく兄弟ビューとして
+    /// コンテナ (`panel.contentView`) に乗せる。`effectView.alphaValue` を下げても
+    /// アイコン/文字の視認性に影響しない（Fix: 透明度調整）。
+    /// 既存の場合は hostingView の rootView を差し替えるだけ。
     private func installGlassContentView(rootView: AnyView, size: CGSize) {
         guard let panel else { return }
 
-        if let effectView = panel.contentView as? NSVisualEffectView {
-            if let hostingView = effectView.subviews.compactMap({ $0 as? NSHostingView<AnyView> }).first {
-                hostingView.rootView = rootView
-            } else {
-                let hostingView = NSHostingView(rootView: rootView)
-                hostingView.frame = effectView.bounds
-                hostingView.autoresizingMask = [.width, .height]
-                hostingView.wantsLayer = true
-                effectView.addSubview(hostingView)
-            }
-        } else {
-            let effectView = NSVisualEffectView()
-            effectView.material = .sidebar
-            effectView.blendingMode = .behindWindow
-            effectView.state = .active
-            effectView.frame = NSRect(origin: .zero, size: size)
-            effectView.autoresizingMask = [.width, .height]
-            effectView.wantsLayer = true
-            effectView.layer?.cornerRadius = TrayTheme.cornerRadius
-            effectView.layer?.masksToBounds = true
-
-            let hostingView = NSHostingView(rootView: rootView)
-            hostingView.frame = effectView.bounds
-            hostingView.autoresizingMask = [.width, .height]
-            hostingView.wantsLayer = true
-            effectView.addSubview(hostingView)
-
-            let gripSize: CGFloat = 16
-            let grip = ResizeGripView(
-                frame: NSRect(x: size.width - gripSize, y: 0, width: gripSize, height: gripSize)
-            )
-            grip.autoresizingMask = [.minXMargin, .maxYMargin]
-            grip.minSize = NSSize(
-                width: TrayTheme.trayWidthRange.lowerBound,
-                height: layoutEngine.minTrayHeight
-            )
-            grip.onResizeEnd = { [weak self] in
-                guard let self, let panel = self.panel else { return }
-                self.onFrameChanged(panel.frame)
-            }
-            effectView.addSubview(grip)
-
-            panel.contentView = effectView
+        if let container = panel.contentView,
+           let hostingView = container.subviews.compactMap({ $0 as? NSHostingView<AnyView> }).first {
+            hostingView.rootView = rootView
+            return
         }
+
+        let container = NSView(frame: NSRect(origin: .zero, size: size))
+        container.wantsLayer = true
+        container.layer?.cornerRadius = TrayTheme.cornerRadius
+        container.layer?.masksToBounds = true
+
+        let effectView = NSVisualEffectView(frame: container.bounds)
+        effectView.material = .sidebar
+        effectView.blendingMode = .behindWindow
+        effectView.state = .active
+        effectView.autoresizingMask = [.width, .height]
+        effectView.wantsLayer = true
+        effectView.alphaValue = TrayTheme.glassAlpha
+        container.addSubview(effectView)
+
+        let hostingView = NSHostingView(rootView: rootView)
+        hostingView.frame = container.bounds
+        hostingView.autoresizingMask = [.width, .height]
+        hostingView.wantsLayer = true
+        container.addSubview(hostingView)
+
+        let gripSize: CGFloat = 16
+        let grip = ResizeGripView(
+            frame: NSRect(x: size.width - gripSize, y: 0, width: gripSize, height: gripSize)
+        )
+        grip.autoresizingMask = [.minXMargin, .maxYMargin]
+        grip.minSize = NSSize(
+            width: TrayTheme.trayWidthRange.lowerBound,
+            height: layoutEngine.minTrayHeight
+        )
+        grip.onResizeEnd = { [weak self] in
+            guard let self, let panel = self.panel else { return }
+            self.onFrameChanged(panel.frame)
+        }
+        container.addSubview(grip)
+
+        panel.contentView = container
     }
 
     /// コンテンツ（AnyView）を差し替える。ガラス背景は維持したまま SwiftUI のみ更新。
     func updateContentView(_ rootView: AnyView) {
-        guard let panel else { return }
-        if let effectView = panel.contentView as? NSVisualEffectView {
-            if let hostingView = effectView.subviews.compactMap({ $0 as? NSHostingView<AnyView> }).first {
-                hostingView.rootView = rootView
-            } else {
-                let hostingView = NSHostingView(rootView: rootView)
-                hostingView.frame = effectView.bounds
-                hostingView.autoresizingMask = [.width, .height]
-                hostingView.wantsLayer = true
-                effectView.addSubview(hostingView)
-            }
-        }
+        guard let panel,
+              let hostingView = panel.contentView?.subviews.compactMap({ $0 as? NSHostingView<AnyView> }).first
+        else { return }
+        hostingView.rootView = rootView
     }
 
     /// パネルを非表示にする。破棄はしない。

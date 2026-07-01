@@ -17,6 +17,9 @@ enum TrayTheme {
     static let tabRailTopPadding: CGFloat = 16
     static let tabRailFooterHeight: CGFloat = 72
     static let snapThreshold: CGFloat = 20
+    /// ガラス背景(NSVisualEffectView)自体の追加透明度。値を下げるほど背景が透ける。
+    /// コンテンツ(アイコン・文字)はこの値の影響を受けない別レイヤーに分離してある。
+    static let glassAlpha: CGFloat = 0.82
 
     // MARK: - Colors
     static let trayAccent = Color.accentColor

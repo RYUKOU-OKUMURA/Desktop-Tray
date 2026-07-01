@@ -11,6 +11,17 @@ final class TrayPanel: NSPanel {
         get { true }
         set { /* 固定 */ }
     }
+
+    /// `nonactivatingPanel` はクリックしても他アプリのウィンドウより手前に上がらない仕様のため、
+    /// クリック時に明示的にこのパネルだけを最前面へ引き上げる。
+    /// `orderFrontRegardless()` はアプリのアクティブ化（他アプリからのフォーカス奪取）を伴わないため、
+    /// nonactivating の「他アプリの作業を妨げない」特性は維持したまま前面化だけを行える。
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown || event.type == .rightMouseDown {
+            orderFrontRegardless()
+        }
+        super.sendEvent(event)
+    }
 }
 
 /// 左端 TabRail 用の固定パネル（Fix G）。
@@ -20,6 +31,14 @@ final class TabRailPanel: NSPanel {
     override var isMovableByWindowBackground: Bool {
         get { false }
         set { /* 固定 */ }
+    }
+
+    /// トレイパネルと同様、クリックで最前面に引き上げる（Fix: nonactivating パネルの前面化）。
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown || event.type == .rightMouseDown {
+            orderFrontRegardless()
+        }
+        super.sendEvent(event)
     }
 }
 
